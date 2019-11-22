@@ -90,6 +90,8 @@ Macromiidae="Macromia_amphigena"
 Corduliidae=c("Neurocordulia_yamaskanensis",
 	"Somatochlora_uchidai")
 
+Epiophlebiidae="Epiophlebia_superstes"
+
 Libellulidae=c("Pantala_flavscens",
 	"Rhyothemis_sp",
 	"Ladona_fulva",
@@ -103,29 +105,32 @@ Outgroup=c("Ephemera_danica",
 	"Isonychia_kiangsinensis")
 
 phy=read.tree("/Users/Anton/Downloads/50BUSCO_dna_pasta_iqtree_trees_all")
-fam_list=list(Calopterigoidea,Coenagrionidae,Platycnemididae,Lestidae,Synlestidae,Preilestidae,Aeshnidae,Gomphidae,Petaluridae,Cordulegastridae,Neopetaliidae,Chlorogomphidae,Synthemistidae,Macromiidae,Corduliidae,Libellulidae,Outgroup)
-names(fam_list)=c("Calopterigoidea","Coenagrionidae","Platycnemididae","Lestidae","Synlestidae","Preilestidae","Aeshnidae","Gomphidae","Petaluridae","Cordulegastridae","Neopetaliidae","Chlorogomphidae","Synthemistidae","Macromiidae","Corduliidae","Libellulidae","Outgroup")
+fam_list=list(Calopterigoidea,Coenagrionidae,Platycnemididae,Lestidae,Synlestidae,Preilestidae,Aeshnidae,Gomphidae,Petaluridae,Cordulegastridae,Neopetaliidae,Chlorogomphidae,Synthemistidae,Macromiidae,Corduliidae,Libellulidae,Outgroup,Epiophlebiidae)
+names(fam_list)=c("Calopterigoidea","Coenagrionidae","Platycnemididae","Lestidae","Synlestidae","Preilestidae","Aeshnidae","Gomphidae","Petaluridae","Cordulegastridae","Neopetaliidae","Chlorogomphidae","Synthemistidae","Macromiidae","Corduliidae","Libellulidae","Outgroup","Epiophlebiidae")
 for (tr in phy)
 {
     tip_list=c()
     if (any(tr$tip.label %in% "Epiophlebia_superstes"))
     {
-        tip_list=c(tip_list,"Epiophlebia_superstes")
-        for (sp in fam_list)
+        for (pos_fam in 1:length(fam_list))
         {
-            if(any(tr$tip.label %in% sp))
+            fam=unlist(fam_list[pos_fam])
+            if(any(tr$tip.label %in% fam))
             {
-                select=sample(tr$tip.label[tr$tip.label %in% sp],1)
+                select=sample(tr$tip.label[tr$tip.label %in% fam],1)
                 tip_list=c(tip_list,select)
             }    
         }       
         tree_to_newick=keep.tip(tr,tip_list)
         for ( i in tree_to_newick$tip.label)
         {
-            repl=names(which(i==fam_list))
-            tree_to_newick$tip.label[i]=replace
+            repl=names(which(lapply(fam_list,'%in%',x=i)==T))
+            tree_to_newick$tip.label[which(i==tree_to_newick$tip.label)]=repl
         }    
-        print(write.tree(tree_to_newick))
+        write.tree(tree_to_newick,"phylonet_trees",append=T)
 
     }
+    all=read.tree("phylonet_trees")
+    d=data.frame(rep("Tree",length(all)),paste("gt",1:length(all),"=",sep=""),write.tree(all))
+    write.table(d,"phylonet_trees_nexus",quote = F,row.names = F, col.names=F)
 }    
