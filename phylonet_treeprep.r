@@ -53,7 +53,7 @@ Lestidae=c("Archilestes_grandis",
 Synlestidae=c("Episylestes_cristatus",
 	"Synlestes_weyersii")
 
-Preilestidae="Perrisolestes_remotus"
+Perilestidae="Perrisolestes_remotus"
 
 Epiophlebiidae="Epiophlebia_superstes"
 
@@ -130,7 +130,28 @@ for (tr in phy)
         write.tree(tree_to_newick,"phylonet_trees",append=T)
 
     }
-    all=read.tree("phylonet_trees")
-    d=data.frame(rep("Tree",length(all)),paste("gt",1:length(all),"=",sep=""),write.tree(all))
-    write.table(d,"phylonet_trees_nexus",quote = F,row.names = F, col.names=F)
+   
+}  
+all=read.tree("phylonet_trees")
+d=data.frame(rep("Tree",length(all)),paste("gt",1:length(all),"=",sep=""),write.tree(all))
+write.table(d,"phylonet_trees_nexus",quote = F,row.names = F, col.names=F)
+
+zz=1
+all_trees=c()
+for (tr in phy)
+{
+    print(zz)
+    zz=zz+1
+    if ("Epiophlebia_superstes" %in% tr$tip.label)
+    {
+        tree_to_newick=keep.tip(tr,intersect(c(Aeshnidae,Epiophlebiidae,Lestidae,Synlestidae,Perilestidae),tr$tip.label)) 
+        all_trees=c(all_trees,write.tree(tree_to_newick))
+        
+        
+    }
 }    
+write.table(all_trees,"phylonet_trees",quote = F,row.names = F, col.names=F)
+all=read.tree("phylonet_trees")
+d=data.frame(rep("Tree",length(all)),paste("gt",1:length(all),"=",sep=""),write.tree(all))
+write.table(d,"phylonet_trees_nexus",quote = F,row.names = F, col.names=F)
+   
