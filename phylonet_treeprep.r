@@ -105,8 +105,8 @@ Outgroup=c("Ephemera_danica",
 	"Isonychia_kiangsinensis")
 
 phy=read.tree("/Users/Anton/Downloads/50BUSCO_dna_pasta_iqtree_trees_all")
-fam_list=list(Calopterigoidea,Coenagrionidae,Platycnemididae,Lestidae,Synlestidae,Preilestidae,Aeshnidae,Gomphidae,Petaluridae,Cordulegastridae,Neopetaliidae,Chlorogomphidae,Synthemistidae,Macromiidae,Corduliidae,Libellulidae,Outgroup,Epiophlebiidae)
-names(fam_list)=c("Calopterigoidea","Coenagrionidae","Platycnemididae","Lestidae","Synlestidae","Preilestidae","Aeshnidae","Gomphidae","Petaluridae","Cordulegastridae","Neopetaliidae","Chlorogomphidae","Synthemistidae","Macromiidae","Corduliidae","Libellulidae","Outgroup","Epiophlebiidae")
+fam_list=list(Calopterigoidea,Coenagrionidae,Platycnemididae,Lestidae,Synlestidae,Perilestidae,Aeshnidae,Gomphidae,Petaluridae,Cordulegastridae,Neopetaliidae,Chlorogomphidae,Synthemistidae,Macromiidae,Corduliidae,Libellulidae,Outgroup,Epiophlebiidae)
+names(fam_list)=c("Calopterigoidea","Coenagrionidae","Platycnemididae","Lestidae","Synlestidae","Perilestidae","Aeshnidae","Gomphidae","Petaluridae","Cordulegastridae","Neopetaliidae","Chlorogomphidae","Synthemistidae","Macromiidae","Corduliidae","Libellulidae","Outgroup","Epiophlebiidae")
 for (tr in phy)
 {
     tip_list=c()
@@ -136,22 +136,50 @@ all=read.tree("phylonet_trees")
 d=data.frame(rep("Tree",length(all)),paste("gt",1:length(all),"=",sep=""),write.tree(all))
 write.table(d,"phylonet_trees_nexus",quote = F,row.names = F, col.names=F)
 
+
+
+fam_list=list(RZ=c(Calopterigoidea,Coenagrionidae,Platycnemididae,Platystictidae),Lestoidea=c(Lestidae,Synlestidae,Perilestidae),Aeshnidae=Aeshnidae,RA=c(Gomphidae,Petaluridae,Cordulegastridae,Neopetaliidae,Chlorogomphidae,Synthemistidae,Macromiidae,Corduliidae,Libellulidae),Outgroup=Outgroup,Epiophlebiidae=Epiophlebiidae)
+
+fam_list=list(RZ=c(Calopterigoidea,Coenagrionidae,Platycnemididae,Platystictidae),Lestoidea=c(Lestidae,Synlestidae,Perilestidae),Aeshnidae=Aeshnidae,RA=c(Gomphidae,Petaluridae,Cordulegastridae,Neopetaliidae,Chlorogomphidae,Synthemistidae,Macromiidae,Corduliidae,Libellulidae),Epiophlebiidae=Epiophlebiidae)
+
 zz=1
+gene_n=0
 all_trees=c()
+gene_reps=c()
 for (tr in phy)
 {
     print(zz)
     zz=zz+1
     if ("Epiophlebia_superstes" %in% tr$tip.label)
     {
-        tree_to_newick=keep.tip(tr,intersect(c(Aeshnidae,Epiophlebiidae,Lestidae,Synlestidae,Perilestidae),tr$tip.label)) 
-        all_trees=c(all_trees,write.tree(tree_to_newick))
+        for (reps in 1:100)
+        {
+            sp_intersect=lapply(fam_list,sample,1)
+            tree_to_newick=keep.tip(tr,intersect(sp_intersect,tr$tip.label))
+            for ( i in tree_to_newick$tip.label)
+            {
+                repl=names(which(lapply(fam_list,'%in%',x=i)==T))
+                tree_to_newick$tip.label[which(i==tree_to_newick$tip.label)]=repl
+            }
+            all_trees=c(all_trees,write.tree(tree_to_newick))
+        }    
         
         
     }
 }    
 write.table(all_trees,"phylonet_trees",quote = F,row.names = F, col.names=F)
 all=read.tree("phylonet_trees")
+write.table("#NEXUS\n\nBEGIN TREES;","phylonet_trees_nexus",quote = F,row.names = F, col.names=F)
+write.table("Tree fixtr = ((Lestoidea,RZ),(Epiophlebiidae,(Aeshnidae,RA)));","phylonet_trees_nexus",quote = F,row.names = F, col.names=F,append=T)
 d=data.frame(rep("Tree",length(all)),paste("gt",1:length(all),"=",sep=""),write.tree(all))
-write.table(d,"phylonet_trees_nexus",quote = F,row.names = F, col.names=F)
-   
+write.table(d,"phylonet_trees_nexus",quote = F,row.names = F, col.names=F,append=T)
+write.table("END;\n\nBEGIN PHYLONET;","phylonet_trees_nexus",quote = F,row.names = F, col.names=F,append=T)
+pp=data.frame(b=paste("{gt",seq(1,134600,by=100),sep=""),a=paste("-gt",seq(0,134600,by=100)[2:1347],"}",sep=""))
+parts=paste(apply(pp,1,paste,collapse=""),collapse=",")
+write.table(paste("InferNetwork_MPL","(",parts,")",1,"-s fixtr -fs -di -pl 15 -x 5;","\nEND;"),"phylonet_trees_nexus",quote = F,row.names = F, col.names=F,append=T)   
+
+
+
+
+
+
