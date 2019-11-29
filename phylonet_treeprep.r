@@ -1,5 +1,6 @@
 library(ape)
 library(phytools)
+library(phangorn)
 
 Calopterigoidea=c("Agriomorpha_fusca",
 	"Devedatta_sp",
@@ -219,6 +220,9 @@ fordensitree=function(alltree)
     write.table(all_trees,"fullphylogeny_all",quote = F,row.names = F, col.names=F)
 }    
 
+
+
+### All trees summary 
 kk=read.tree("/Users/Anton/Downloads/fullphylogeny_all")
 
 
@@ -226,12 +230,16 @@ kk=read.tree("/Users/Anton/Downloads/fullphylogeny_all")
 sporder=c("Perissolestes_remotus","Synlestes_weyersii","Episynlestes_cristatus","Indolestes_peregrinus","Archilestes_grandis","Protosticta_beaumonti","Euphaea_decorata","Euphaea_ochracea","Euphaea_masoni","Diphlebia_euphoeoides","Devadatta_kompieri","Agriomorpha_fusca","Philogenia_carrillica","Miocora_notoxantha","Heteragrion_majus","Heteragrion_erythrogastrum","Hetaerina_americana","Mnais_costalis","Atrocalopteryx_coomani","Calopteryx_splendens","Platycypha_caligata","Heliocypha_perforata","Austroargiolestes_christine","Rhinagrion_viridatum","Philoganga_vetusta","Prodasineura_autumnalis","Copera_marginipes","Coeliccia_sp",
 "Telebasis_salva","Megaloprepus_caerulatus","Mecistogaster_modesta","Nehalennia_gracilis","Chromagrion_conditum","Psaironeura_remissa","Protoneura_sulfurata","Argia_fumipennis","Coenagrion_puella","Argiocnemis_sp","Megalagrion_hawaiiense","Ischnura_ramburii","Ischnura_heterosticta","Ischnura_elegans","Ischnura_hastata","Ischnura_verticalis","Ischnura_cervula","Ischnura_asiatica","Enallagma_sp","Cyanallagma_interruptum","Epiophlebia_superstes","Telephlebia_godeffroyi","Austroaeschna_subapicalis","Gynacantha_tibiata","Anax_parthenope","Anax_walsinghami","Anax_junius",
 "Aeshna_palmata","Tanypteryx_pryeri","Phenes_raptor","Ictinogomphus_pertinax","Leptogomphus_perforatus","Stylurus_spiniceps","Phanogomphus_spicatus","Asiagomphus_melaenops","Chlorogomphus_auratus","Neopetalia_punctata","Cordulegaster_maculata","Cordulegaster_dorsalis","Cordulegaster_boltonii","Anotogaster_sieboldii","Eusynthemis_nigra","Gomphomacromia_paradoxa","Macromia_amphigena","Somatochlora_uchidai","Neurocordulia_yamaskanensis","Rhyothemis_variegata","Pantala_flavescens","Libellula_saturata","Libellula_forensis","Orthetrum_albistylum","Ladona_fulva","Sympetrum_frequens","Erythrodiplax_connata","Acisoma_variegatum")
-densiTree(kk,alpha = 0.15,scaleX = T,jitter = list(amount = 0.2, random=TRUE),col=rep(c("blue","black","blue","black","blue","darkgreen","blue","black","blue","black","blue","black"),c(13,4,3,1,1,1,1,2,1,4,13,4)),consensus=rev(sporder))
+
+
+par(bg = 'black')
+densiTree(kk,alpha = 0.2,scaleX = T,jitter = list(amount = 0.1, random=TRUE),col=rep(c("blue","red","blue","red","blue","darkgreen","blue","red","blue","red","blue","red"),c(13,4,3,1,1,1,1,2,1,4,13,4)),consensus=rev(sporder),tip.color="white",label.offset=0.01,cex=0.6)
+legend("topleft",c("DNA","Protein","AF") ,lty=c(1,1,1),col=c("blue","red","darkgreen"),text.col ="white",lwd=3)
 
 
 
 #Gene trees densitree
-genefordensitree=function(alltree)
+genefordensitree=function(alltree,filename)
 {
     all_trees=c()
 
@@ -256,7 +264,33 @@ genefordensitree=function(alltree)
             all_trees=c(all_trees,write.tree(tr))
         }
     }
-    write.table(all_trees,"geneteesdensitree_all",quote = F,row.names = F, col.names=F)
+    write.table(all_trees,filename,quote = F,row.names = F, col.names=F)
 }    
-xx=read.tree("/Users/Anton/Downloads/geneteesdensitree_all")
-densiTree(xx[1:100],alpha = 0.05,scaleX = T)
+
+buscoprot=read.tree("/Users/Anton/Downloads/gene_trees/BUSCO50_prot_pasta_iqtree_all")
+genefordensitree(buscoprot,"buscoprot_densitree")
+buscoprot_tr=read.tree("/Users/Anton/Downloads/buscoprot_densitree")
+
+buscodna=read.tree("/Users/Anton/Downloads/gene_trees/BUSCO50_dna_pasta_iqtree_all")
+genefordensitree(buscodna,"buscodna_densitree")
+buscodna_tr=read.tree("/Users/Anton/Downloads/buscodna_densitree")
+densiTree(c(kk[3],buscodna_tr),scaleX = T,consensus=rev(sporder),jitter = list(amount = 0.2, random=TRUE),col=c(adjustcolor("red", alpha.f = 0.4),adjustcolor( rep("white",length(buscodna_tr)), alpha.f = 0.007)),alpha=1,tip.color="white",label.offset=0.01,cex=0.6)
+legend("topleft",title="BUSCO50",c("species tree","gene tree") ,lty=c(1,1),col=c("red","white"),text.col ="white",lwd=3)
+
+yangdna=read.tree("/Users/Anton/Downloads/gene_trees/YANG50_dna_pasta_iqtree_all")
+genefordensitree(yangdna,"yangdna_densitree")
+yangdna_tr=read.tree("/Users/Anton/Downloads/yangdna_densitree")
+densiTree(c(kk[3],yangdna_tr),scaleX = T,consensus=rev(sporder),jitter = list(amount = 0.2, random=TRUE),col=c(adjustcolor("red", alpha.f = 0.5),adjustcolor( rep("white",length(yangdna_tr)), alpha.f = 0.007)),alpha=1,tip.color="white",label.offset=0.01,cex=0.6)
+legend("topleft",title="YANG50",c("species tree","gene tree") ,lty=c(1,1),col=c("red","white"),text.col ="white",lwd=3)
+
+yangprot=read.tree("/Users/Anton/Downloads/gene_trees/YANG50_prot_pasta_iqtree_all")
+genefordensitree(yangprot,"yangprot_densitree")
+yangprot_tr=read.tree("/Users/Anton/Downloads/yangprot_densitree")
+
+
+densiTree(buscoprot_tr,alpha = 0.05,scaleX = T,consensus=rev(sporder))
+
+
+
+par(bg = 'black')
+densiTree(c(yangdna_tr,kk[3]),scaleX = T,consensus=rev(sporder),jitter = list(amount = 0.3, random=TRUE),col=c(adjustcolor( rep("white",length(yangdna_tr)), alpha.f = 0.007),"red"),alpha=1,lwd=4)
