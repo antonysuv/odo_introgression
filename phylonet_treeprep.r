@@ -106,7 +106,36 @@ Libellulidae=c("Pantala_flavscens",
 Outgroup=c("Ephemera_danica",
 	"Isonychia_kiangsinensis")
 
-phy=read.tree("/Users/Anton/Downloads/50BUSCO_dna_pasta_iqtree_trees_all")
+
+
+
+
+###Phylonet FULL topology 
+phylonet_full_topo=function(sp_tree,gene_trees,n_retic)
+{
+    sp_phy=read.tree(sp_tree)
+    sp_phy$node.label=NULL
+    #sp_phy=drop.tip(sp_phy,tip="Epiophlebia_superstes")
+    #sp_phy=drop.tip(sp_phy,tip="Isonychia_kiangsinensis")
+    phy=read.tree(gene_trees)
+    #phy1=lapply(phy,drop.tip,tip="Epiophlebia_superstes")
+    #phy2=lapply(phy1,drop.tip,tip="Isonychia_kiangsinensis")
+    f_n=paste("phylonet_genes_",n_retic,"ret.nex",sep="")
+    write("#NEXUS\n\nBEGIN TREES;",f_n)
+    write(paste("Tree fixtr = ",write.tree(sp_phy)),f_n,,append=T)
+    d=data.frame(rep("Tree",length(phy)),paste("gt",1:length(phy),"=",sep=""),write.tree(phy))
+    write.table(d,f_n,quote = F,row.names = F, col.names=F,append=T)
+    write("END;\n\nBEGIN PHYLONET;",f_n,append=T)
+    write(paste("InferNetwork_MPL (all)",n_retic,"-s fixtr -fs -di -pl 15;","\nEND;"),f_n,append=T)
+}    
+
+phylonet_full_topo("/Users/Anton/Downloads/BUSCO50_dna_pasta_nopart_iqtree_root.tre","/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all",10)
+
+
+
+
+
+
 fam_list=list(Calopterigoidea,Coenagrionidae,Platycnemididae,Lestidae,Synlestidae,Perilestidae,Aeshnidae,Gomphidae,Petaluridae,Cordulegastridae,Neopetaliidae,Chlorogomphidae,Synthemistidae,Macromiidae,Corduliidae,Libellulidae,Outgroup,Epiophlebiidae)
 names(fam_list)=c("Calopterigoidea","Coenagrionidae","Platycnemididae","Lestidae","Synlestidae","Perilestidae","Aeshnidae","Gomphidae","Petaluridae","Cordulegastridae","Neopetaliidae","Chlorogomphidae","Synthemistidae","Macromiidae","Corduliidae","Libellulidae","Outgroup","Epiophlebiidae")
 for (tr in phy)
