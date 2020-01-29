@@ -115,21 +115,38 @@ phylonet_full_topo=function(sp_tree,gene_trees,n_retic)
 {
     sp_phy=read.tree(sp_tree)
     sp_phy$node.label=NULL
-    #sp_phy=drop.tip(sp_phy,tip="Epiophlebia_superstes")
-    #sp_phy=drop.tip(sp_phy,tip="Isonychia_kiangsinensis")
     phy=read.tree(gene_trees)
-    #phy1=lapply(phy,drop.tip,tip="Epiophlebia_superstes")
+    rooted_phy=c()
+    for (gt in phy)
+    {
+        if ("Ephemera_danica" %in% gt$tip.label)
+        {
+            gt_r=root(gt,c("Ephemera_danica"),resolve.root=T)
+            gt_r$node.label[gt_r$node.label=="Root"]=100
+            gt_r$node.label[gt_r$node.label==""]=1
+            gt_r$node.label=as.numeric(gt_r$node.label)/100
+            rooted_phy=c(rooted_phy,write.tree(gt_r))
+        } else if ("Isonychia_kiangsinensis" %in% gt$tip.label) {
+            gt_r=root(gt,c("Isonychia_kiangsinensis"),resolve.root=T)
+            gt_r$node.label[gt_r$node.label=="Root"]=100
+            gt_r$node.label[gt_r$node.label==""]=1
+            gt_r$node.label=as.numeric(gt_r$node.label)/100
+            rooted_phy=c(rooted_phy,write.tree(gt_r))
+        }   
+    } 
+    phy=rooted_phy
+    #phy1=lapply(phy,drop.tip,tip="Ephemera_danica")
     #phy2=lapply(phy1,drop.tip,tip="Isonychia_kiangsinensis")
     f_n=paste("phylonet_genes_",n_retic,"ret.nex",sep="")
     write("#NEXUS\n\nBEGIN TREES;",f_n)
     write(paste("Tree fixtr = ",write.tree(sp_phy)),f_n,,append=T)
-    d=data.frame(rep("Tree",length(phy)),paste("gt",1:length(phy),"=",sep=""),write.tree(phy))
+    d=data.frame(rep("Tree",length(phy)),paste("gt",1:length(phy),"=",sep=""),phy)
     write.table(d,f_n,quote = F,row.names = F, col.names=F,append=T)
     write("END;\n\nBEGIN PHYLONET;",f_n,append=T)
-    write(paste("InferNetwork_MPL (all)",n_retic,"-s fixtr -fs -di -pl 15;","\nEND;"),f_n,append=T)
+    write(paste("InferNetwork_MPL (all)",n_retic,"-s fixtr -fs -di -pl 15 -x 1;","\nEND;"),f_n,append=T)
 }    
 
-phylonet_full_topo("/Users/Anton/Downloads/BUSCO50_dna_pasta_nopart_iqtree_root.tre","/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all",10)
+phylonet_full_topo("/Users/Anton/Downloads/BUSCO50_dna_pasta_nopart_iqtree_root.tre","/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all",1)
 
 
 
