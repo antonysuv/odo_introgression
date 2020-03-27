@@ -42,7 +42,7 @@ phylonet_chunk_topo=function(sp_tree,gene_trees,sp_list,n_retic)
         d=data.frame(rep("Tree",length(phy)),paste("gt",1:length(phy),"=",sep=""),phy)
         write.table(d,f_n, quote = FALSE,row.names = FALSE, col.names=FALSE,append=TRUE)
         write("END;\n\nBEGIN PHYLONET;",f_n,append=TRUE)
-        write(paste("InferNetwork_ML (all)",i,"-s fixtr -di -pl 10 -x 30 -b 0.9 -n 5 -po;","\nEND;"),f_n,append=TRUE)
+        write(paste("InferNetwork_MPL (all)",i,"-s fixtr -di -pl 10 -x 100 -b 0.9 -n 5 -po;","\nEND;"),f_n,append=TRUE)
         #return(phy)
     }    
 }    
@@ -50,7 +50,7 @@ phylonet_chunk_topo=function(sp_tree,gene_trees,sp_list,n_retic)
 
 epio=c('Ischnura_elegans','Copera_marginipes','Protosticta_beaumonti','Archilestes_grandis','Indolestes_peregrinus','Episynlestes_cristatus','Synlestes_weyersii','Perissolestes_remotus','Epiophlebia_superstes','Aeshna_palmata','Anax_junius','Anax_walsinghami','Anax_parthenope','Gynacantha_tibiata','Austroaeschna_subapicalis','Telephlebia_godeffroyi','Phenes_raptor','Ladona_fulva','Ephemera_danica','Isonychia_kiangsinensis')
 anax=c('Aeshna_palmata','Anax_junius','Anax_walsinghami','Anax_parthenope','Gynacantha_tibiata','Austroaeschna_subapicalis','Telephlebia_godeffroyi',"Isonychia_kiangsinensis","Ephemera_danica") 
-gompeta=c('Asiagomphus_melaenops','Phanogomphus_spicatus','Stylurus_spiniceps','Leptogomphus_perforatus','Ictinogomphus_pertinax','Phenes_raptor','Tanypteryx_pryeri','Gomphomacromia_paradoxa',"Isonychia_kiangsinensis","Ephemera_danica")
+gompeta=c("Anax_parthenope",'Asiagomphus_melaenops','Phanogomphus_spicatus','Stylurus_spiniceps','Leptogomphus_perforatus','Ictinogomphus_pertinax','Phenes_raptor','Tanypteryx_pryeri','Gomphomacromia_paradoxa',"Isonychia_kiangsinensis","Ephemera_danica")
 libs=c("Pantala_flavescens","Sympetrum_frequens","Rhyothemis_variegata","Erythrodiplax_connata", "Acisoma_variegatum", "Libellula_saturata","Libellula_forensis","Ladona_fulva", "Orthetrum_albistylum","Isonychia_kiangsinensis","Ephemera_danica")
 
 phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",anax,1)
@@ -61,17 +61,13 @@ phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_past
 
 
 
-Lestoidea=c("Perissolestes_remotus","Synlestes_weyersii","Episynlestes_cristatus","Indolestes_peregrinus","Archilestes_grandis","Protosticta_beaumonti")
-RZ=c("Euphaea_decorata","Euphaea_ochracea","Euphaea_masoni","Diphlebia_euphoeoides","Devadatta_kompieri","Agriomorpha_fusca","Philogenia_carrillica","Miocora_notoxantha","Heteragrion_majus","Heteragrion_erythrogastrum","Hetaerina_americana","Mnais_costalis","Atrocalopteryx_coomani","Calopteryx_splendens","Platycypha_caligata","Heliocypha_perforata","Austroargiolestes_christine","Rhinagrion_viridatum","Philoganga_vetusta","Prodasineura_autumnalis","Copera_marginipes","Coeliccia_sp","Telebasis_salva","Megaloprepus_caerulatus","Mecistogaster_modesta","Nehalennia_gracilis","Chromagrion_conditum","Psaironeura_remissa","Protoneura_sulfurata","Argia_fumipennis","Coenagrion_puella","Argiocnemis_sp","Megalagrion_hawaiiense","Ischnura_ramburii","Ischnura_heterosticta","Ischnura_elegans","Ischnura_hastata","Ischnura_verticalis","Ischnura_cervula","Ischnura_asiatica","Enallagma_sp","Cyanallagma_interruptum")
-Epiophlebiidae="Epiophlebia_superstes"
-Aeshnidae=c("Telephlebia_godeffroyi","Austroaeschna_subapicalis","Gynacantha_tibiata","Anax_parthenope","Anax_walsinghami","Anax_junius","Aeshna_palmata")
-RA=c("Tanypteryx_pryeri","Phenes_raptor","Ictinogomphus_pertinax","Leptogomphus_perforatus","Stylurus_spiniceps","Phanogomphus_spicatus","Asiagomphus_melaenops","Chlorogomphus_auratus","Neopetalia_punctata","Cordulegaster_maculata","Cordulegaster_dorsalis","Cordulegaster_boltonii","Anotogaster_sieboldii","Eusynthemis_nigra","Gomphomacromia_paradoxa","Macromia_amphigena","Somatochlora_uchidai","Neurocordulia_yamaskanensis","Rhyothemis_variegata","Pantala_flavescens","Libellula_saturata","Libellula_forensis","Orthetrum_albistylum","Ladona_fulva","Sympetrum_frequens","Erythrodiplax_connata","Acisoma_variegatum")
 
-Epio_ran=list(Lestoidea=Lestoidea,Epiophlebiidae=Epiophlebiidae,Aeshnidae=Aeshnidae,RA=RA,RZ=RZ)
+
+
 
 
 #ML Phylonet species random sample
-phylonet_chunk_topo_random=function(sp_tree,gene_trees,fam_list,n_retic,reps)
+phylonet_chunk_topo_random=function(sp_tree,gene_trees,fam_list,file_n,reps)
 {
     sp_phy=read.tree(sp_tree)
     sp_phy$node.label=NULL
@@ -114,59 +110,55 @@ phylonet_chunk_topo_random=function(sp_tree,gene_trees,fam_list,n_retic,reps)
         }      
         
     } 
-    phy=rooted_phy
-    for (i in 1:n_retic)
-    {    
-        filename=deparse(substitute(fam_list))
-        f_n=paste(filename,"_phylonet_genes_",i,"ret.nex",sep="")
-        write("#NEXUS\n\nBEGIN TREES;",f_n)
-        write(paste("Tree fixtr = ",write.tree(sp_phy_sub)),f_n,append=TRUE)
-        d=data.frame(rep("Tree",length(phy)),paste("gt",1:length(phy),"=",sep=""),phy)
-        write.table(d,f_n, quote = FALSE,row.names = FALSE, col.names=FALSE,append=TRUE)
-        write("END;\n\nBEGIN PHYLONET;",f_n,append=TRUE)
-        write(paste("InferNetwork_ML (all)",i,"-s fixtr -di -pl 10 -x 30 -b 0.9 -n 5 -po;","\nEND;"),f_n,append=TRUE)
+    phy=rooted_phy  
+    filename=deparse(substitute(fam_list))
+    f_n=paste(filename,"_phylonet_genes_",file_n,"MCMC.nex",sep="")
+    write("#NEXUS\n\nBEGIN TREES;",f_n)
+    write(paste("Tree fixtr = ",write.tree(sp_phy_sub)),f_n,append=TRUE)
+    d=data.frame(rep("Tree",length(phy)),paste("gt",1:length(phy),"=",sep=""),phy)
+    write.table(d,f_n, quote = FALSE,row.names = FALSE, col.names=FALSE,append=TRUE)
+    write("END;\n\nBEGIN PHYLONET;",f_n,append=TRUE)
+    write(paste("MCMC_GT (all) -cl 1000000 -bl 5000 -sf 1000 -mr 1;","\nEND;"),f_n,append=TRUE)
         #return(phy)
-    }    
+      
 }    
 
 
-phylonet_chunk_topo_random("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",Epio_ran,1,20)
+
+#Subsample Epiophlebiidae
+Lestoidea=c("Perissolestes_remotus","Synlestes_weyersii","Episynlestes_cristatus","Indolestes_peregrinus","Archilestes_grandis","Protosticta_beaumonti")
+RZ=c("Euphaea_decorata","Euphaea_ochracea","Euphaea_masoni","Diphlebia_euphoeoides","Devadatta_kompieri","Agriomorpha_fusca","Philogenia_carrillica","Miocora_notoxantha","Heteragrion_majus","Heteragrion_erythrogastrum","Hetaerina_americana","Mnais_costalis","Atrocalopteryx_coomani","Calopteryx_splendens","Platycypha_caligata","Heliocypha_perforata","Austroargiolestes_christine","Rhinagrion_viridatum","Philoganga_vetusta","Prodasineura_autumnalis","Copera_marginipes","Coeliccia_sp","Telebasis_salva","Megaloprepus_caerulatus","Mecistogaster_modesta","Nehalennia_gracilis","Chromagrion_conditum","Psaironeura_remissa","Protoneura_sulfurata","Argia_fumipennis","Coenagrion_puella","Argiocnemis_sp","Megalagrion_hawaiiense","Ischnura_ramburii","Ischnura_heterosticta","Ischnura_elegans","Ischnura_hastata","Ischnura_verticalis","Ischnura_cervula","Ischnura_asiatica","Enallagma_sp","Cyanallagma_interruptum")
+Epiophlebiidae="Epiophlebia_superstes"
+Aeshnidae=c("Telephlebia_godeffroyi", "Austroaeschna_subapicalis","Gynacantha_tibiata","Anax_parthenope","Anax_walsinghami","Anax_junius","Aeshna_palmata")
+RA=c("Tanypteryx_pryeri","Phenes_raptor","Ictinogomphus_pertinax","Leptogomphus_perforatus","Stylurus_spiniceps","Phanogomphus_spicatus","Asiagomphus_melaenops","Chlorogomphus_auratus","Neopetalia_punctata","Cordulegaster_maculata","Cordulegaster_dorsalis","Cordulegaster_boltonii","Anotogaster_sieboldii","Eusynthemis_nigra","Gomphomacromia_paradoxa","Macromia_amphigena","Somatochlora_uchidai","Neurocordulia_yamaskanensis","Rhyothemis_variegata","Pantala_flavescens","Libellula_saturata","Libellula_forensis","Orthetrum_albistylum","Ladona_fulva","Sympetrum_frequens","Erythrodiplax_connata","Acisoma_variegatum")
+Outgroup=c("Isonychia_kiangsinensis","Ephemera_danica")
+epio_run=list(Lestoidea=Lestoidea,Epiophlebiidae=Epiophlebiidae,Aeshnidae=Aeshnidae,RA=RA,RZ=RZ,Outgroup=Outgroup)
+
+for (i in 1:10)
+{
+    phylonet_chunk_topo_random("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",epio_run,i,1)
+}
+
+
+#Subsample Gomphidae-Petaluridae
+RA1=c("Epiophlebia_superstes","Telephlebia_godeffroyi", "Austroaeschna_subapicalis","Gynacantha_tibiata","Anax_parthenope","Anax_walsinghami","Anax_junius","Aeshna_palmata")
+Petaluridae=c("Tanypteryx_pryeri","Phenes_raptor")
+Gomphidae=c("Ictinogomphus_pertinax","Leptogomphus_perforatus","Stylurus_spiniceps","Phanogomphus_spicatus","Asiagomphus_melaenops")
+RA2=c("Chlorogomphus_auratus","Neopetalia_punctata","Cordulegaster_maculata","Cordulegaster_dorsalis","Cordulegaster_boltonii","Anotogaster_sieboldii","Eusynthemis_nigra","Gomphomacromia_paradoxa","Macromia_amphigena","Somatochlora_uchidai","Neurocordulia_yamaskanensis","Rhyothemis_variegata","Pantala_flavescens","Libellula_saturata","Libellula_forensis","Orthetrum_albistylum","Ladona_fulva","Sympetrum_frequens","Erythrodiplax_connata","Acisoma_variegatum")
+Outgroup=c("Isonychia_kiangsinensis","Ephemera_danica")
+gompeta_run=list(Petaluridae=Petaluridae,Gomphidae=Gomphidae,RA1=RA1,RA2=RA2,Outgroup=Outgroup)
+
+#MCMC
+for (i in 1:10)
+{
+    phylonet_chunk_topo_random("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",gompeta_run,i,1)
+}    
+#ML
+phylonet_chunk_topo_random("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",gompeta_run,1,10)
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-anax_sub=c('Aeshna_palmata','Anax_junius','Anax_walsinghami','Anax_parthenope','Gynacantha_tibiata','Austroaeschna_subapicalis','Telephlebia_godeffroyi')
-anax_tt=read.tree(text=phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",anax_sub,1))
-
-densiTree(c(anax_tt,anax_tt[3]),scaleX = F,consensus=anax_sub,col=c(adjustcolor("navy", alpha.f = 0.2),adjustcolor( rep("black",length(anax_tt)), alpha.f = 0.01)),alpha=1,tip.color="black",label.offset=0.01,cex=0.6,scale.bar = F)
-
-gompeta_sub=c('Asiagomphus_melaenops','Phanogomphus_spicatus','Stylurus_spiniceps','Leptogomphus_perforatus','Ictinogomphus_pertinax','Phenes_raptor','Tanypteryx_pryeri','Gomphomacromia_paradoxa')
-gompeta_tt=read.tree(text=phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",gompeta_sub,1))
-densiTree(gompeta_tt,scaleX = F,consensus=anax_sub,col=c(adjustcolor("navy", alpha.f = 0.2),adjustcolor( rep("black",length(anax_tt)), alpha.f = 0.01)),alpha=1,tip.color="black",label.offset=0.01,cex=0.6,scale.bar = F)
 
 
 list_triples=function(taxa)
@@ -207,3 +199,35 @@ tripls_from_taxa=function(taxa,taxa_map)
 
 taxa_map("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
 tripls_from_taxa(gg,"taxa_map.txt") 
+
+
+
+tt=read.table("tri.txt")
+#Epiophlebia test 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+anax_sub=c('Aeshna_palmata','Anax_junius','Anax_walsinghami','Anax_parthenope','Gynacantha_tibiata','Austroaeschna_subapicalis','Telephlebia_godeffroyi')
+anax_tt=read.tree(text=phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",anax_sub,1))
+
+densiTree(c(anax_tt,anax_tt[3]),scaleX = F,consensus=anax_sub,col=c(adjustcolor("navy", alpha.f = 0.2),adjustcolor( rep("black",length(anax_tt)), alpha.f = 0.01)),alpha=1,tip.color="black",label.offset=0.01,cex=0.6,scale.bar = F)
+
+gompeta_sub=c('Asiagomphus_melaenops','Phanogomphus_spicatus','Stylurus_spiniceps','Leptogomphus_perforatus','Ictinogomphus_pertinax','Phenes_raptor','Tanypteryx_pryeri','Gomphomacromia_paradoxa')
+gompeta_tt=read.tree(text=phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",gompeta_sub,1))
+densiTree(gompeta_tt,scaleX = F,consensus=anax_sub,col=c(adjustcolor("navy", alpha.f = 0.2),adjustcolor( rep("black",length(anax_tt)), alpha.f = 0.01)),alpha=1,tip.color="black",label.offset=0.01,cex=0.6,scale.bar = F)
+
+
+
