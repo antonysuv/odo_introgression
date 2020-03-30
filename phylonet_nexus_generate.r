@@ -4,6 +4,16 @@ library('phangorn')
 
 
 
+#Listselect
+listsel=function(l,ind)
+{
+    new_l=l
+    for (i in 1:length(l))
+    new_l[[i]]=l[[i]][ind[[i]]]
+    return(new_l)
+        
+}    
+
 #ML Phylonet
 phylonet_chunk_topo=function(sp_tree,gene_trees,sp_list,n_retic)
 {
@@ -83,32 +93,36 @@ phylonet_chunk_topo_random=function(sp_tree,gene_trees,fam_list,file_n,reps)
     rooted_phy=c()
     for (gt in phy)
     {
-        for (re in 1:reps)
-        {
-            sp_list=lapply(fam_list,sample,1)
-            if (all(sp_list %in% gt$tip.label) & any(out_v %in% gt$tip.label))
+       
+       if (all(unlist(lapply(lapply(fam_list,"%in%",gt$tip.label),any))))
+       {    
+            for (re in 1:reps)
             {
-
-                out_sp=out_v[which(out_v %in% gt$tip.label)[1]]
-                gt_r=root(gt,out_sp,resolve.root=T)
-                gt_sub=keep.tip(gt_r,unlist(sp_list))
-                gt_sub$node.label[1]=100
-                gt_sub$node.label[gt_sub$node.label=="0"]="1"
-                gt_sub$node.label[gt_sub$node.label==""]="1"
-                gt_sub$node.label[gt_sub$node.label=="NA"]="1"
-                gt_sub$node.label[gt_sub$node.label=="Root"]=100
-                gt_sub$node.label=as.numeric(gt_sub$node.label)/100
-                for ( i in gt_sub$tip.label)
+                pos=lapply(lapply(lapply(fam_list,"%in%",gt$tip.label),which),sample,1)
+                sp_list=listsel(fam_list,pos)
+                if (all(sp_list %in% gt$tip.label) & any(out_v %in% gt$tip.label))
                 {
-                    repl=names(which(lapply(fam_list,'%in%',x=i)==T))
-                    gt_sub$tip.label[which(i==gt_sub$tip.label)]=repl
-                }
-                rooted_phy=c(rooted_phy,write.tree(gt_sub))
 
-            } 
-            
-        }      
-        
+                    out_sp=out_v[which(out_v %in% gt$tip.label)[1]]
+                    gt_r=root(gt,out_sp,resolve.root=T)
+                    gt_sub=keep.tip(gt_r,unlist(sp_list))
+                    gt_sub$node.label[1]=100
+                    gt_sub$node.label[gt_sub$node.label=="0"]="1"
+                    gt_sub$node.label[gt_sub$node.label==""]="1"
+                    gt_sub$node.label[gt_sub$node.label=="NA"]="1"
+                    gt_sub$node.label[gt_sub$node.label=="Root"]=100
+                    gt_sub$node.label=as.numeric(gt_sub$node.label)/100
+                    for ( i in gt_sub$tip.label)
+                    {
+                        repl=names(which(lapply(fam_list,'%in%',x=i)==T))
+                        gt_sub$tip.label[which(i==gt_sub$tip.label)]=repl
+                    }
+                    rooted_phy=c(rooted_phy,write.tree(gt_sub))
+
+                } 
+
+            }      
+        }
     } 
     phy=rooted_phy  
     filename=deparse(substitute(fam_list))
@@ -118,7 +132,7 @@ phylonet_chunk_topo_random=function(sp_tree,gene_trees,fam_list,file_n,reps)
     d=data.frame(rep("Tree",length(phy)),paste("gt",1:length(phy),"=",sep=""),phy)
     write.table(d,f_n, quote = FALSE,row.names = FALSE, col.names=FALSE,append=TRUE)
     write("END;\n\nBEGIN PHYLONET;",f_n,append=TRUE)
-    write(paste("MCMC_GT (all) -cl 1000000 -bl 5000 -sf 1000 -mr 1;","\nEND;"),f_n,append=TRUE)
+    write(paste("MCMC_GT (all) -cl 1010000 -bl 10000 -sf 1000 -mr 1 -pl 10;","\nEND;"),f_n,append=TRUE)
         #return(phy)
       
 }    
@@ -134,9 +148,9 @@ RA=c("Tanypteryx_pryeri","Phenes_raptor","Ictinogomphus_pertinax","Leptogomphus_
 Outgroup=c("Isonychia_kiangsinensis","Ephemera_danica")
 epio_run=list(Lestoidea=Lestoidea,Epiophlebiidae=Epiophlebiidae,Aeshnidae=Aeshnidae,RA=RA,RZ=RZ,Outgroup=Outgroup)
 
-for (i in 1:10)
+for (i in 1:5)
 {
-    phylonet_chunk_topo_random("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",epio_run,i,1)
+    phylonet_chunk_topo_random("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",epio_run,i,10)
 }
 
 
@@ -149,12 +163,32 @@ Outgroup=c("Isonychia_kiangsinensis","Ephemera_danica")
 gompeta_run=list(Petaluridae=Petaluridae,Gomphidae=Gomphidae,RA1=RA1,RA2=RA2,Outgroup=Outgroup)
 
 #MCMC
-for (i in 1:10)
+for (i in 1:5)
 {
-    phylonet_chunk_topo_random("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",gompeta_run,i,1)
+    phylonet_chunk_topo_random("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",gompeta_run,i,10)
 }    
+
+
+
 #ML
 phylonet_chunk_topo_random("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",gompeta_run,1,10)
+
+
+
+log_epio=c()
+for (i in mm)
+{
+    ww="Epiophlebia_superstes" %in% i$tip.label
+    log_epio=c(log_epio,ww)
+}    
+
+
+
+
+
+
+
+
 
 
 

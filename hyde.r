@@ -6,6 +6,7 @@ library('MASS')
 library('gridExtra')
 library('ggplot2')
 library('pals')
+library('reshape2')
 
 
 get_density = function(x, y, ...) 
@@ -72,15 +73,33 @@ Lestoidea=c("P43_Protosticta_beaumonti","P44_Archilestes_grandis","P45_Indoleste
 Outgroup=c("P84_Ephemera_danica","P85_Isonychia_kiangsinensis")
 write.table(tt[tt$V2=="P49_Epiophlebia_superstes" & tt$V1 %in% Lestoidea & tt$V3 %in% Aeshnidae,],"epio_tri.txt",col.names=F,row.names=F,quote=F)
 write.table(tt[tt$V2=="P49_Epiophlebia_superstes" & !tt$V1 %in% Lestoidea & !tt$V3 %in% Aeshnidae & !tt$V1 %in% Outgroup & !tt$V3 %in% Outgroup,],"epio_tri_random.txt",col.names=F,row.names=F,quote=F)
-write.table(tt[!tt$V2=="P49_Epiophlebia_superstes" & !tt$V1 %in% Lestoidea & !tt$V3 %in% Aeshnidae & !tt$V1 %in% Outgroup & !tt$V3 %in% Outgroup,][sample(1:238280,1000),],"random.txt",col.names=F,row.names=F,quote=F)
+
 
 
 epio_hyde=read.table("hyde_epio_tri-out.txt",header=T)
+epio_hyde$Pvalue=p.adjust(epio_hyde$Pvalue,method="bonferroni")
+epio_hyde=epio_hyde[epio_hyde$Pvalue<0.05,]
 epio_hyde$Gamma[which(epio_hyde$Gamma > 1)] = 1
 epio_hyde$Gamma[which(epio_hyde$Gamma < 0)] = 0
+epio_hyde$D=(epio_hyde$ABBA-epio_hyde$ABAB)/(epio_hyde$ABBA+epio_hyde$ABAB)
+
 
 epio_hyde_random=read.table("hyde_epio_tri_random-out.txt",header=T)
-epio_hyde_random=epio_hyde_random[epio_hyde_random$Gamma > 0 & epio_hyde_random$Gamma < 1, ]
+epio_hyde_random$Pvalue=p.adjust(epio_hyde_random$Pvalue,method="bonferroni")
+epio_hyde_random=epio_hyde_random[epio_hyde_random$Gamma > 0 & epio_hyde_random$Gamma < 1 & epio_hyde_random$Pvalue < 0.05, ]
+epio_hyde_random$D=(epio_hyde_random$ABBA-epio_hyde_random$ABAB)/(epio_hyde_random$ABBA+epio_hyde_random$ABAB)
+
+total=read.table("hyde_all_tri-out_noephemera.txt",header=T)
+total$Pvalue=p.adjust(total$Pvalue,method="bonferroni")
+total=total[total$Gamma > 0 & total$Gamma < 1 & total$Pvalue<0.05, ]
+total$D=(total$ABBA-total$ABAB)/(total$ABBA+total$ABAB)
+#Violin plot
+vp_hydeG=melt(list(Epiophlebia=epio_hyde$Gamma,Random=epio_hyde_random$Gamma,Total=total$Gamma))
+vp_hydeG$stat="Gamma"
+vp_hydeD=melt(list(Epiophlebia=epio_hyde$D,Random=epio_hyde_random$D,Total=total$D))
+vp_hydeD$stat="D"
+vp_hyde1=rbind(vp_hydeG,vp_hydeD)
+ggplot(vp_hyde1, aes(x=L1, y=value,fill=stat))+geom_violin()+labs(x="Triplets", y = "Value")+scale_fill_manual(values=c("Grey", "goldenrod2"),name="",labels=c("D",expression(gamma)))+ geom_boxplot(width=0.05,position=position_dodge(0.9),outlier.size=-1)+stat_summary(fun.y=median, geom="point", size=2, color="red",position=position_dodge(0.9))
 
 
 

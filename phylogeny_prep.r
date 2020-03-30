@@ -4,6 +4,8 @@ library(laser)
 library(geiger)
 library(TreeSim)
 library(phytools)
+library(ggplot2)
+library(reshape2)
 source("http://ib.berkeley.edu/courses/ib200b/labs/lab12/rbdtree.n3.R")
 
 phy_mcmc=readMCMCtree("/Users/Anton/Downloads/all_dated_trees/run4long.tree.tre")
@@ -76,3 +78,28 @@ mtext(side = 3, "K-Pg",at=-66)
 rect(xleft=-145, ybottom=-10, xright=-66, ytop=0,col=rgb(129,196,85, max = 255))
 text(x=-105.5, y = -5,"Cretaceous",cex=0.9)
 rect(xleft=-145, ybottom=0, xright=-66, ytop=270,col=rgb(129,196,85, max = 255,alpha=40),lty=0)
+
+
+
+
+
+
+#Phylonet mcmc summary
+#Epio
+vp_mcmc1=read.table("T1T2T3_epio.txt",header=T)
+vp_mcmc1=melt(vp_mcmc1)
+ggplot(vp_mcmc1, aes(x=variable, y=value))+geom_violin()+labs(x="Topology", y = "Introgression probability")+ stat_summary(fun.y=median, geom="point", size=2, color="red",show.legend = T)+stat_summary(fun.y=mean, geom="point", size=2,color="navy")
+
+barplot(c(0.5200,0.1300,0.0700),names.arg=c("T1","T2","T3","T4","T5"))
+
+#gompeta
+ 
+
+
+
+
+
+
+
+aa=read.tree(text="(((((RA2:0.8385748329730929,(Petaluridae:0.9493089531666606,Gomphidae:1.7300674228475683)I5:0.020918220732205797)I4:0.004920905547713555)I3#H1:1.2179271210847253::0.7831467555537692,RA1:0.48153765072383004)I2:1.2224372738950704,I3#H1:0.022172516627286545::0.21685324444623075)I1:2.7623889789154434,Outgroup:1.104219535577279)I0;")
+barplot(c(0.2100,0.1600,0.1500,0.0800,0.0600),names.arg=c("T1","T2","T3","T4","T5"))
