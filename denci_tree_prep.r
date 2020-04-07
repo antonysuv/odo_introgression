@@ -66,3 +66,5 @@ epio_genes_trim=genefordensitree(epio_genes)
 quartz(width=7, height=7)
 densiTree(epio_genes_trim,alpha = 0.008,scaleX = T,jitter = list(amount = 0.1, random=TRUE),col="black",label.offset=0.01,cex=0.6,scale.bar = F,consensus=rev(epioord))
 quartz.save("Epio_cloud.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=1)
+
+(((Pantala_flavescens,Rhyothemis_variegata),(((Ladona_fulva,Orthetrum_albistylum),(Libellula_forensis,Libellula_saturata)),(Sympetrum_frequens,(Acisoma_variegatum,Erythrodiplax_connata)))),(Ephemera_danica,Isonychia_kiangsinensis));
