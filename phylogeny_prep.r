@@ -6,6 +6,7 @@ library(TreeSim)
 library(phytools)
 library(ggplot2)
 library(reshape2)
+library(gridExtra)
 source("http://ib.berkeley.edu/courses/ib200b/labs/lab12/rbdtree.n3.R")
 
 phy_mcmc=readMCMCtree("/Users/Anton/Downloads/all_dated_trees/run4long.tree.tre")
@@ -88,7 +89,11 @@ rect(xleft=-145, ybottom=0, xright=-66, ytop=270,col=rgb(129,196,85, max = 255,a
 #Epio
 vp_mcmc1=read.table("T1T2T3_epio.txt",header=T)
 vp_mcmc1=melt(vp_mcmc1)
-ggplot(vp_mcmc1, aes(x=variable, y=value))+geom_violin()+labs(x="Topology", y = "Introgression probability")+ stat_summary(fun.y=median, geom="point", size=2, color="red",show.legend = T)+stat_summary(fun.y=mean, geom="point", size=2,color="navy")
+ggplot(vp_mcmc1, aes(x=variable, y=value))+geom_violin(bw=0.1)+labs(x="Topology", y = "Introgression probability")+ geom_boxplot(width=0.01,position=position_dodge(0.9),outlier.size=-1)+ stat_summary(fun.y=median, geom="point", size=2, color="red",show.legend = T)
+#Gompeta
+vp_mcmc2=read.table("T1T2T3_gompeta.txt",header=T)
+vp_mcmc2=melt(vp_mcmc2)
+ggplot(vp_mcmc2, aes(x=variable, y=value))+geom_violin(bw=0.1)+labs(x="Topology", y = "Introgression probability")+ geom_boxplot(width=0.01,position=position_dodge(0.9),outlier.size=-1)+ stat_summary(fun.y=median, geom="point", size=2, color="red",show.legend = T)
 
 barplot(c(0.5200,0.1300,0.0700),names.arg=c("T1","T2","T3","T4","T5"))
 
