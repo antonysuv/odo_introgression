@@ -3,7 +3,7 @@
 
 # Commands
 
-# Pylonet
+# PhyloNet
 ```
 java -jar ~/soft/phylonet/PhyloNet_3.8.0.jar summary.nex
 ```
