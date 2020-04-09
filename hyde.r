@@ -107,7 +107,7 @@ a1=ggplot(total_ord[total_ord$Order!="RANDOM",], aes(x=Order, y=value,fill=varia
 total_suborder=melt(total[,c("D","Gamma","Suborder")])
 a2=ggplot(total_suborder[total_suborder$Suborder!="RANDOM",], aes(x=Suborder, y=value,fill=variable))+geom_violin()+labs(x="Suborder", y = "Value")+scale_fill_manual(values=c("Grey", "goldenrod2"),name="",labels=c("D",expression(gamma)))+facet_wrap(~variable)+ theme(axis.text.x = element_text(size = 8))+ geom_boxplot(width=0.01,outlier.size=-1)+ggtitle("B")+stat_summary(fun.y=median, geom="point", size=2, color="black")
 
-total_subfam=melt(total[,c("D","Gamma","Subfamily")])
+total_subfam=melt(total[,c("D","Gamma","Superfamily")])
 a3=ggplot(total_subfam[total_subfam$Subfamily!="RANDOM",], aes(x=Subfamily, y=value,fill=variable))+geom_violin()+labs(x="Subfamily", y = "Value")+scale_fill_manual(values=c("Grey", "goldenrod2"),name="",labels=c("D",expression(gamma)))+facet_wrap(~variable)+ theme(axis.text.x = element_text(size = 8,angle=10))+ geom_boxplot(width=0.01,outlier.size=-1)+ggtitle("C")+stat_summary(fun.y=median, geom="point", size=2, color="black")
 
 grid.arrange(a1,a2,a3,ncol=1,nrow=3)

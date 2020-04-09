@@ -1,4 +1,5 @@
 library("ape")
+library("svMisc")
 
 
 dfoil_select=function(phy,id)
@@ -8,6 +9,7 @@ dfoil_select=function(phy,id)
     test_phy=read.tree(text="((('A','A'),('A','A')),A);")
     for (i in 1:ncol(taxa_combn))
     {
+        progress(i,ncol(taxa_combn))
         sub_phy=keep.tip(phy,taxa_combn[,i])
         sub_phy_dup=sub_phy
         sub_phy_dup$tip.label=rep("A",length(sub_phy_dup$tip.label))
@@ -32,12 +34,12 @@ dfoil_select=function(phy,id)
 
 
 tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
+Outgroup=c("Ephemera_danica")
+Anisozygoptera=keep.tip(tt,c(extract.clade(tt,131)$tip.label,extract.clade(tt,137)$tip.label,"Epiophlebia_superstes",Outgroup))
+Zygoptera=keep.tip(tt,c(extract.clade(tt,88)$tip.label,Outgroup))
+Anisoptera=keep.tip(tt,c(extract.clade(tt,136)$tip.label,Outgroup))
 
-LestoideaPlat=c("Perissolestes_remotus","Synlestes_weyersii","Episynlestes_cristatus","Indolestes_peregrinus","Archilestes_grandis","Protosticta_beaumonti")
-Epiophlebiidae="Epiophlebia_superstes"
-Aeshnidae=c("Telephlebia_godeffroyi", "Austroaeschna_subapicalis","Gynacantha_tibiata","Anax_parthenope","Anax_walsinghami","Anax_junius","Aeshna_palmata")
-Outgroup=c("Isonychia_kiangsinensis")
-
-phy=keep.tip(tt,c(LestoideaPlat,Epiophlebiidae,Aeshnidae,Outgroup))
-dfoil_select(phy,"epio_dfoil")
+dfoil_select(Anisozygoptera,"Anisozygoptera_dfoil")
+dfoil_select(Anisoptera,"Anisoptera_dfoil")
+dfoil_select(Zygoptera,"Zygoptera_dfoil")
 

@@ -1,4 +1,7 @@
 library("ape")
+library('ggplot2')
+library('pals')
+library('reshape2')
 
 
 .write.tree2 <- function(phy, digits = 10, tree.prefix = "", check_tips)
@@ -82,10 +85,6 @@ assignInNamespace(".write.tree2", .write.tree2, "ape")
 
 
 
-
-
-
-
 quible_trees=function(triplet,gene_trees,file_id)
 {
     phy=read.tree(gene_trees)
@@ -126,10 +125,10 @@ OutputPath: ./OUTNAME"
 
 
 
-all_triplets=function(taxa_list,gene_trees)
+all_triplets=function(taxa_list,gene_trees,dir_name)
 {
-    dir.create("quibl_dir")
-    setwd("quibl_dir")
+    dir.create(dir_name)
+    setwd(dir_name)
     taxa_combn=combn(taxa_list,m=3)
     for (i in 1:ncol(taxa_combn))
     {
@@ -143,15 +142,30 @@ all_triplets=function(taxa_list,gene_trees)
 
 
 
-Lestoidea=c("Perissolestes_remotus","Synlestes_weyersii","Episynlestes_cristatus","Indolestes_peregrinus","Archilestes_grandis","Protosticta_beaumonti")
-Epiophlebiidae="Epiophlebia_superstes"
-Aeshnidae=c("Telephlebia_godeffroyi", "Austroaeschna_subapicalis","Gynacantha_tibiata","Anax_parthenope","Anax_walsinghami","Anax_junius","Aeshna_palmata")
-Epio=c(Lestoidea,Epiophlebiidae,Aeshnidae)
+tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
+
+Anisozygoptera=c(extract.clade(tt,131)$tip.label,extract.clade(tt,137)$tip.label,"Epiophlebia_superstes")
+Aeshnoidea=c(extract.clade(tt,137)$tip.label,extract.clade(tt,144)$tip.label)
+Calopterygoidea=extract.clade(tt,91)$tip.label
+Coenagrionoidea=extract.clade(tt,109)$tip.label
+Lestoidea=extract.clade(tt,131)$tip.label
+Cardulegastroidea=extract.clade(tt,151)$tip.label
+Libelluloidea=extract.clade(tt,156)$tip.label
+
+
+all_triplets(Aeshnoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Aeshnoidea_quibl")
+all_triplets(Calopterygoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Calopterygoidea_quibl")
+all_triplets(Coenagrionoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Coenagrionoidea_quibl")
+all_triplets(Lestoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Lestoidea_quibl")
+all_triplets(Cardulegastroidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Cardulegastroidea_quibl")
+all_triplets(Libelluloidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Libelluloidea_quibl")
+all_triplets(Anisozygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Anisozygoptera_quibl")
 
 
 
-all_triplets(Epio,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot")
+#RUN QuiBL
 
-quibl=read.csv("/Users/Anton/Downloads/quibl_out_all_epio_anax")
 
-quibl$BICdiff = quibl$BIC2-quibl$BIC1
+qb=read.csv("/Users/Anton/Downloads/quibl_all.txt")
+qb=qb[complete.cases(qb), ] 
+qb$BICdiff = qb$BIC2-qb$BIC1
