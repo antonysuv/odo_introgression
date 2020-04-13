@@ -45,3 +45,6 @@ all_retictrees=function(retic_trees,gene_trees,dir_name)
 }    
 
 all_retictrees("/Users/Anton/Downloads/nets_1ret_Aeschnidae_Anax.txt","/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","anax_allretic")
+all_retictrees("/Users/Anton/Downloads/nets_1ret_Epiophlebia.txt","/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","epio_allretic")
+all_retictrees("/Users/Anton/Downloads/nets_1ret_Libellulidae.txt","/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","libs_allretic")
+all_retictrees("/Users/Anton/Downloads/nets_1ret_Gomphidae_Petaluridae.txt","/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","gompeta_allretic")

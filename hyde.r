@@ -90,7 +90,7 @@ total$Suborder=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Zygopte
                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Anisoptera),1,all),"Anisoptera",
                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Anisozygoptera),1,any),"Anisozygoptera","RANDOM")))
 
-total$Subfamily=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Lestoidea),1,all),"Lestoidea",
+total$Superfamily=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Lestoidea),1,all),"Lestoidea",
                        ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Calopterygoidea),1,all),"Calopterygoidea",
                        ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Coenagrionoidea),1,all),"Coenagrionoidea",
                        ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Aeshnoidea),1,all),"Aeshnoidea",
@@ -107,8 +107,8 @@ a1=ggplot(total_ord[total_ord$Order!="RANDOM",], aes(x=Order, y=value,fill=varia
 total_suborder=melt(total[,c("D","Gamma","Suborder")])
 a2=ggplot(total_suborder[total_suborder$Suborder!="RANDOM",], aes(x=Suborder, y=value,fill=variable))+geom_violin()+labs(x="Suborder", y = "Value")+scale_fill_manual(values=c("Grey", "goldenrod2"),name="",labels=c("D",expression(gamma)))+facet_wrap(~variable)+ theme(axis.text.x = element_text(size = 8))+ geom_boxplot(width=0.01,outlier.size=-1)+ggtitle("B")+stat_summary(fun.y=median, geom="point", size=2, color="black")
 
-total_subfam=melt(total[,c("D","Gamma","Superfamily")])
-a3=ggplot(total_subfam[total_subfam$Subfamily!="RANDOM",], aes(x=Subfamily, y=value,fill=variable))+geom_violin()+labs(x="Subfamily", y = "Value")+scale_fill_manual(values=c("Grey", "goldenrod2"),name="",labels=c("D",expression(gamma)))+facet_wrap(~variable)+ theme(axis.text.x = element_text(size = 8,angle=10))+ geom_boxplot(width=0.01,outlier.size=-1)+ggtitle("C")+stat_summary(fun.y=median, geom="point", size=2, color="black")
+total_superfam=melt(total[,c("D","Gamma","Superfamily")])
+a3=ggplot(total_superfam[total_superfam$Superfamily!="RANDOM",], aes(x=Superfamily, y=value,fill=variable))+geom_violin()+labs(x="Superfamily", y = "Value")+scale_fill_manual(values=c("Grey", "goldenrod2"),name="",labels=c("D",expression(gamma)))+facet_wrap(~variable)+ theme(axis.text.x = element_text(size = 8,angle=10))+ geom_boxplot(width=0.01,outlier.size=-1)+ggtitle("C")+stat_summary(fun.y=median, geom="point", size=2, color="black")
 
 grid.arrange(a1,a2,a3,ncol=1,nrow=3)
 
