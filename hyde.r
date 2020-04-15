@@ -150,8 +150,14 @@ quartz.save("hyde_phate_umap_suppl.pdf", type = "pdf",antialias=F,bg="white",dpi
 quartz.save("hyde_phate_umap_suppl.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
 
 
+#STATS for Focal clades 
+
+#Epiophlebia 
+total=total[total$Pvalue<10^-6,]
+total[total$Hybrid=="P49_Epiophlebia_superstes" & total$P1 %in% Lestoidea  &  total$P2 %in% Aeshnoidea[1:7],]$Gamma
 
 
+#D and Gamma distributions
 
 total_ord=melt(total[,c("D","Gamma","Order")])
 a1=ggplot(total_ord[total_ord$Order!="RANDOM",], aes(x=Order, y=value,fill=variable))+geom_violin()+labs(x="Order", y = "Value")+scale_fill_manual(values=c("Grey", "goldenrod2"),name="",labels=c("D",expression(gamma)))+facet_wrap(~variable)+ theme(axis.text.x = element_text(size = 8))+ geom_boxplot(width=0.01,outlier.size=-1)+ggtitle("A")+stat_summary(fun.y=median, geom="point", size=2, color="black")
@@ -165,42 +171,6 @@ a3=ggplot(total_superfam[total_superfam$Superfamily!="RANDOM",], aes(x=Superfami
 grid.arrange(a1,a2,a3,ncol=1,nrow=3)
 
 
-#Dimentionality reduction
-total_dr=total[,c(7:21)]/apply(total[,c(7:21)],1,sum)
-phate_out=phate(total_dr)
-umap_out=umap(total_dr)
-tsne_out=Rtsne(total_dr)
-
-dat1=data.frame(phate_out$embedding)
-dat1$Gamma=total$Gamma
-dat1$D=total$D
-
-dat2=data.frame(umap_out$layout)
-names(dat2)=c("UMAP1","UMAP2")
-dat2$Gamma=total$Gamma
-dat2$D=total$D
-
-dat3=data.frame(tsne_out$Y)
-names(dat3)=c("tSNE1","tSNE2")
-dat3$Gamma=total$Gamma
-dat3$D=total$D
-
-g1=ggplot(dat1) + geom_point(aes(PHATE1, PHATE2, color = Gamma),size=0.01)+scale_color_gradientn(colors = viridis(30),name=expression(gamma))+theme_classic()+ggtitle("A")
-g2=ggplot(dat1) + geom_point(aes(PHATE1, PHATE2, color = D),size=0.01)+scale_color_gradientn(colors = viridis(30))+theme_classic()+ggtitle("")
-g3=ggplot(dat2) + geom_point(aes(UMAP1, UMAP2, color = Gamma),size=0.01)+scale_color_gradientn(colors = viridis(30),name=expression(gamma))+theme_classic()+ggtitle("B")
-g4=ggplot(dat2) + geom_point(aes(UMAP1, UMAP2, color = D),size=0.01)+scale_color_gradientn(colors = viridis(30))+theme_classic()+ggtitle("")
-g5=ggplot(dat3) + geom_point(aes(tSNE1, tSNE2, color = Gamma),size=0.01)+scale_color_gradientn(colors = viridis(30),name=expression(gamma))+theme_classic()+ggtitle("C")
-g6=ggplot(dat3) + geom_point(aes(tSNE1, tSNE2, color = D),size=0.01)+scale_color_gradientn(colors = viridis(30))+theme_classic()+ggtitle("")
-
-grid.arrange(g1,g2,g3,g4,g5,g6,ncol=2,nrow=3)
-quartz.save("hyde_phate_total_sitespatterns", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
-
-pca_out=prcomp(total_dr)
-dat4=data.frame(pca_out$x[,1:2])
-dat4$Gamma=total$Gamma
-dat4$D=total$D
-ggplot(dat4) + geom_point(aes(PC1,PC2, color = Gamma),size=0.01)+scale_color_gradientn(colors = viridis(30),name=expression(gamma))+theme_classic()
-ggplot(dat4) + geom_point(aes(PC1,PC2, color = D),size=0.01)+scale_color_gradientn(colors = viridis(30))+theme_classic()
 
 
 

@@ -64,6 +64,7 @@ dfoil_select_az(Anisozygoptera,"Anisozygoptera_dfoil")
 
 names_v=c("P1","P2","P3","P4","Out","chrom1","position", "AAAAA" , "AAABA" , "AABAA" , "AABBA" , "ABAAA" , "ABABA" , "ABBAA" , "ABBBA" , "BAAAA" , "BAABA" , "BABAA" , "BABBA" , "BBAAA" ,"BBABA","BBBAA","BBBBA",'chromdup','coord','total','dtotal','T12','T34','T1234','DFO_left','DFO_right','DFO_total','DFO_stat','DFO_chisq','DFO_Pvalue','DIL_left','DIL_right','DIL_total','DIL_stat','DIL_chisq','DIL_Pvalue','DFI_left','DFI_right','DFI_total','DFI_stat','DFI_chisq','DFI_Pvalue','DOL_left','DOL_right','DOL_total','DOL_stat','DOL_chisq','DOL_Pvalue','introgression','introgna','intrognone','introg13','introg14','introg23','introg24','introg31','introg41','introg32','introg42','introg123','introg124')
 
+tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
 Anisozygoptera=c(extract.clade(tt,131)$tip.label,extract.clade(tt,137)$tip.label,"Protosticta_beaumonti","Chlorogomphus_auratus","Epiophlebia_superstes")
 Zygoptera=c(extract.clade(tt,88)$tip.label)
 Anisoptera=c(extract.clade(tt,136)$tip.label)
@@ -171,10 +172,11 @@ quartz.save("dfoil_phate_umap_suppl.png", type = "png",antialias=F,bg="white",dp
 
 
 
+#STATS for Focal clades 
 
-
-
-
+#Epiophlebia 
+total[total$introgressionid!="None" & total$Suborder=="Anisozygoptera",]
+#P2=>P3 P3=Epiophlebia P2 Indolestes_peregrinus Perissolestes_remotus  Synlestes_weyersii:  6 ssignificant tests 
 
 
 
