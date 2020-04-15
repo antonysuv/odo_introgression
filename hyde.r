@@ -65,7 +65,7 @@ tripls_from_taxa(gg,"taxa_map.txt")
 tt=read.table("tri.txt")
 
 
-
+################################################################ RUN HyDe ######################################################################## 
 
 
 #Violin plots
@@ -81,9 +81,11 @@ Cordulegastroidea=tt[64:69]
 Libelluloidea=tt[70:83]
 
 total=read.table("hyde_all_tri-out_noephemera.txt",header=T)
+total=total[complete.cases(total),]
 total$Pvalue=p.adjust(total$Pvalue,method="bonferroni")
-total=total[total$Pvalue<10^-6,]
 total$D=(total$ABBA-total$ABAB)/(total$ABBA+total$ABAB)
+total=total[total$Gamma<=1 & total$Gamma>=0, ]
+
 total$Order="Odonata"
 
 total$Suborder=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Zygoptera),1,all),"Zygoptera",
@@ -97,6 +99,56 @@ total$Superfamily=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Lest
                        ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Cordulegastroidea),1,all),"Cordulegastroidea",
                        ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Libelluloidea),1,all),"Libelluloidea","RANDOM"))))))       
                               
+
+#Dimentionality reduction
+total_dr=total[,c(7:21)]/apply(total[,c(7:21)],1,sum)
+phate_out=phate(total_dr)
+umap_out=umap(total_dr)
+tsne_out=Rtsne(total_dr)
+
+#Main dr figure
+dat1=data.frame(tsne_out$Y)
+names(dat1)=c("tSNE1","tSNE2")
+introg_d=cbind(dat1,introgressionid=ifelse(total$Pvalue<10^-6,"Introgression","None"))
+dat1=cbind(dat1,total[,c("Gamma","D")])
+t1=ggplot(introg_d) + geom_point(aes(tSNE1, tSNE2, color = introgressionid),size=0.001)+ scale_color_manual(values=c("#5cb85c","#337ab7"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ theme(legend.position=c(0.15, 0.1),legend.background = element_blank())
+t2=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = D),size=0.01)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c("bottom") ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank(),plot.title = element_text(hjust = 0.5))+ ggtitle("D")
+t3=ggplot(dat1[total$Pvalue<10^-6,]) + geom_point(aes(tSNE1, tSNE2, color = Gamma),size=0.01)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c("bottom") ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank(),plot.title = element_text(hjust = 0.5))+ggtitle(expression(gamma))
+lay = rbind(c(1,1,1,NA),
+             c(2,2,3,3))
+             
+quartz(width=5.9,height=8.4) 
+grid.arrange(t1,t2,t3,layout_matrix = lay)
+quartz.save("hyde_tsne.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
+quartz.save("hyde_tsne.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
+#Suppl dr figure 
+#PHATE
+dat1=data.frame(phate_out$embedding)
+names(dat1)=c("PHATE1","PHATE2")
+introg_d=cbind(dat1,introgressionid=ifelse(total$Pvalue<10^-6,"Introgression","None"))
+dat1=cbind(dat1,total[,c("Gamma","D")])
+t4=ggplot(introg_d) + geom_point(aes(PHATE1,PHATE2, color = introgressionid),size=0.001)+ scale_color_manual(values=c("#5cb85c","#337ab7"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ theme(legend.position=c(0.15, 0.1),legend.background = element_blank())+xlim(-0.01,0.1)+xlim(-0.03,0.04)
+t5=ggplot(dat1) + geom_point(aes(PHATE1,PHATE2, color = D),size=0.01)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c("bottom") ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank(),plot.title = element_text(hjust = 0.5))+ ggtitle("D")+xlim(-0.03,0.04)
+t6=ggplot(dat1[total$Pvalue<10^-6,]) + geom_point(aes(PHATE1,PHATE2, color = Gamma),size=0.01)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c("bottom") ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank(),plot.title = element_text(hjust = 0.5))+ggtitle(expression(gamma))+xlim(-0.03,0.04)
+
+#UMAP
+dat1=data.frame(umap_out$layout)
+names(dat1)=c("UMAP1","UMAP2")
+introg_d=cbind(dat1,introgressionid=ifelse(total$Pvalue<10^-6,"Introgression","None"))
+dat1=cbind(dat1,total[,c("Gamma","D")])
+t7=ggplot(introg_d) + geom_point(aes(UMAP1,UMAP2, color = introgressionid),size=0.001)+ scale_color_manual(values=c("#5cb85c","#337ab7"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ theme(legend.position=c(0.15, 0.1),legend.background = element_blank())
+t8=ggplot(dat1) + geom_point(aes(UMAP1,UMAP2, color = D),size=0.01)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c("bottom") ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank(),plot.title = element_text(hjust = 0.5))+ ggtitle("D")
+t9=ggplot(dat1[total$Pvalue<10^-6,]) + geom_point(aes(UMAP1,UMAP2, color = Gamma),size=0.01)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c("bottom") ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank(),plot.title = element_text(hjust = 0.5))+ggtitle(expression(gamma))
+
+lay = rbind(c(1,1,1,NA,4,4,4,NA),
+             c(2,2,3,3,5,5,6,6))
+
+quartz(width=10.7,height=9.5) 
+grid.arrange(t4,t5,t6,t7,t8,t9,layout_matrix = lay)
+quartz.save("hyde_phate_umap_suppl.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
+quartz.save("hyde_phate_umap_suppl.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
 
 
 

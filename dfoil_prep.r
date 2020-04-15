@@ -96,7 +96,14 @@ total$introgressionid=ifelse(total$introgression=="none","None",
                              ifelse(total$introgression=="123" | total$introgression=="124","Ancestral","Inter-group"))
 
 
-total_order=melt(total[,c("introgressionid","Order")])
+
+
+#Total DFOIL results
+#dat1=melt(total[,c("introgressionid","Order","Superfamily","Suborder")],id.vars=c("introgressionid"))
+#dat1=dat1[dat1$value!="RANDOM",]
+
+
+total_order=melt(total[,c("introgressionid","Order","Supefamily","Suborder")])
 g1=ggplot(total_order, aes(x=Order, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+labs(x="Order", y = "")+scale_fill_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="Introgression")
 total_suborder=melt(total[,c("introgressionid","Suborder")])
 g2=ggplot(total_suborder, aes(x=Suborder, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+geom_bar(position="fill")+labs(x="Suborder", y = "Proportion of Quintets")+scale_fill_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="Introgression")
@@ -112,6 +119,67 @@ total_dr=total[,c(8:23)]/apply(total[,c(7:23)],1,sum)
 phate_out=phate(total_dr)
 umap_out=umap(total_dr)
 tsne_out=Rtsne(total_dr)
+
+#Main dr figure
+dat1=data.frame(tsne_out$Y)
+names(dat1)=c("tSNE1","tSNE2")
+introg_d=cbind(dat1,introgressionid=total[,c("introgressionid")])
+introg_d=introg_d[order(introg_d$introgressionid,decreasing = T),]
+dat1=cbind(dat1,total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat")])
+dat1=melt(dat1,id.vars=c("tSNE1","tSNE2"))
+dat1$variable=ifelse(dat1$variable=="DFO_stat","D[FO]",ifelse(dat1$variable=="DIL_stat","D[IL]",ifelse(dat1$variable=="DFI_stat","D[FI]","D[OL]")))
+
+
+
+
+t1=ggplot(introg_d) + geom_point(aes(tSNE1, tSNE2, color = introgressionid),size=0.2)+ scale_color_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ggtitle("A")+ theme(legend.position=c(0.90, 0.2),legend.background = element_blank())
+t2=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = value),size=0.01)+facet_wrap(~variable,nrow = 2,labeller=label_parsed)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+ggtitle("B")+theme(legend.position=c(0.5,0.5), legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"))
+quartz(width=4.6,height=9.7) 
+grid.arrange(t1,t2,nrow=2)
+quartz.save("dfoil_tsne.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
+quartz.save("dfoil_tsne.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
+
+
+
+
+#Suppl dr figure 
+#PHATE
+dat1=data.frame(phate_out$embedding)
+names(dat1)=c("PHATE1","PHATE2")
+introg_d=cbind(dat1,introgressionid=total[,c("introgressionid")])
+introg_d=introg_d[order(introg_d$introgressionid,decreasing = T),]
+dat1=cbind(dat1,total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat")])
+dat1=melt(dat1,id.vars=c("PHATE1","PHATE2"))
+dat1$variable=ifelse(dat1$variable=="DFO_stat","D[FO]",ifelse(dat1$variable=="DIL_stat","D[IL]",ifelse(dat1$variable=="DFI_stat","D[FI]","D[OL]")))
+t3=ggplot(introg_d) + geom_point(aes(PHATE1, PHATE2, color = introgressionid),size=0.2)+ scale_color_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ggtitle("A")+ theme(legend.position=c(0.90, 0.2),legend.background = element_blank())
+t4=ggplot(dat1) + geom_point(aes(PHATE1, PHATE2, color = value),size=0.01)+facet_wrap(~variable,nrow = 2,labeller=label_parsed)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c(0.5,0.5), legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"))
+#UMAP
+dat1=data.frame(umap_out$layout)
+names(dat1)=c("UMAP1","UMAP2")
+introg_d=cbind(dat1,introgressionid=total[,c("introgressionid")])
+introg_d=introg_d[order(introg_d$introgressionid,decreasing = T),]
+dat1=cbind(dat1,total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat")])
+dat1=melt(dat1,id.vars=c("UMAP1","UMAP2"))
+dat1$variable=ifelse(dat1$variable=="DFO_stat","D[FO]",ifelse(dat1$variable=="DIL_stat","D[IL]",ifelse(dat1$variable=="DFI_stat","D[FI]","D[OL]")))
+t5=ggplot(introg_d) + geom_point(aes(UMAP1, UMAP2, color = introgressionid),size=0.2)+ scale_color_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ggtitle("B")+ theme(legend.position=c(0.50, 0.2),legend.background = element_blank())
+t6=ggplot(dat1) + geom_point(aes(UMAP1, UMAP2, color = value),size=0.01)+facet_wrap(~variable,nrow = 2,labeller=label_parsed)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c(0.5,0.5), legend.background = element_blank(), legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"))
+quartz(width=8.6,height=9)
+grid.arrange(t3,t5,t4,t6,nrow=2,ncol=2)
+quartz.save("dfoil_phate_umap_suppl.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
+quartz.save("dfoil_phate_umap_suppl.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -155,6 +223,4 @@ g8=ggplot(dat) + geom_point(aes(Gamma, D, color = Pvalue),size=0.1)+scale_color_
 
 
         
-        
-        
-        & dfo$introgression!="none",]
+   
