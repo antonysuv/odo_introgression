@@ -68,7 +68,7 @@ tt=read.table("tri.txt")
 ################################################################ RUN HyDe ######################################################################## 
 
 
-#Violin plots
+
 tt=as.character(read.table("taxa_map.txt")$V2)
 Zygoptera=tt[1:48]
 Anisoptera=tt[50:83]
@@ -157,7 +157,7 @@ total=total[total$Pvalue<10^-6,]
 total[total$Hybrid=="P49_Epiophlebia_superstes" & total$P1 %in% Lestoidea  &  total$P2 %in% Aeshnoidea[1:7],]$Gamma
 
 
-#D and Gamma distributions
+#D and Gamma distributions Violin plots
 
 total_ord=melt(total[,c("D","Gamma","Order")])
 a1=ggplot(total_ord[total_ord$Order!="RANDOM",], aes(x=Order, y=value,fill=variable))+geom_violin()+labs(x="Order", y = "Value")+scale_fill_manual(values=c("Grey", "goldenrod2"),name="",labels=c("D",expression(gamma)))+facet_wrap(~variable)+ theme(axis.text.x = element_text(size = 8))+ geom_boxplot(width=0.01,outlier.size=-1)+ggtitle("A")+stat_summary(fun.y=median, geom="point", size=2, color="black")

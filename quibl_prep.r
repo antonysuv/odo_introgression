@@ -2,6 +2,8 @@ library("ape")
 library('ggplot2')
 library('pals')
 library('reshape2')
+library('dplyr')
+library('gridExtra')
 
 
 .write.tree2 <- function(phy, digits = 10, tree.prefix = "", check_tips)
@@ -139,6 +141,24 @@ all_triplets=function(taxa_list,gene_trees,dir_name)
 }    
 
 
+get_intropair=function(m,target_sp)
+{
+    l=m[,c("P1","P2","P3")]!=m[,c("outgroup","outgroup","outgroup")]
+    sp_list=m[,c("P1","P2","P3")]
+    pair_v=c()
+    for (i in 1:nrow(l))        
+    {
+        pair_intro=as.character(sp_list[i,][l[i,]])
+        pair_intro=paste(pair_intro[!pair_intro %in% target_sp],target_sp)
+        pair_v=c(pair_v,pair_intro)
+    } 
+    return(pair_v)
+}
+
+
+
+
+
 
 
 
@@ -151,6 +171,13 @@ Coenagrionoidea=extract.clade(tt,109)$tip.label
 Lestoidea=extract.clade(tt,131)$tip.label
 Cardulegastroidea=extract.clade(tt,151)$tip.label
 Libelluloidea=extract.clade(tt,156)$tip.label
+Zygoptera=c(Calopterygoidea,Coenagrionoidea,Lestoidea)
+Anisozygoptera=c("Epiophlebia_superstes")
+Anisoptera=c(Aeshnoidea,Cardulegastroidea,Libelluloidea)
+
+Aeshnidae=extract.clade(tt,137)$tip.label
+Gomphidae_Petaluridae=extract.clade(tt,144)$tip.label
+Libellulidae=extract.clade(tt,161)$tip.label
 
 
 all_triplets(Aeshnoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Aeshnoidea_quibl")
@@ -163,9 +190,69 @@ all_triplets(Anisozygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all
 
 
 
-#RUN QuiBL
+################################################################ RUN QuiBL ########################################################################
 
 
-qb=read.csv("/Users/Anton/Downloads/quibl_all.txt")
-qb=qb[complete.cases(qb), ] 
-qb$BICdiff = qb$BIC2-qb$BIC1
+total=read.csv("/Users/Anton/Downloads/quibl_all.txt")
+total=total[complete.cases(total), ] 
+total$BICdiff = total$BIC2-total$BIC1
+P1=gsub(" ","_",paste(unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",1)),unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",2))))
+P2=gsub(" ","_",paste(unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",3)),unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",4))))
+P3=gsub(" ","_",paste(unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",5)),unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",6))))
+total$P1=P1
+total$P2=P2
+total$P3=P3
+total=total[total$outgroup!="Epiophlebia_superstes",]
+#total=total %>% distinct(triplet,C2 ,  mixprop1,  mixprop2, lambda2Dist, BIC2Dist ,   BIC1Dist, count ,.keep_all = T)
+total_min=data.frame(total %>%  group_by(triplet) %>% filter(count!=max(count)))
+total_max=data.frame(total %>%  group_by(triplet) %>% filter(count!=max(count)))
+total_min$common=FALSE
+total_max$common=TRUE
+total=rbind(total_min,total_max)
+total$sig=total$BICdiff < -20
+total$Order="Odonata"
+
+total$Suborder=ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Zygoptera),1,all),"Zygoptera",
+                      ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Anisoptera),1,all),"Anisoptera",
+                      ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Anisozygoptera),1,any),"Anisozygoptera","RANDOM")))
+
+total$Superfamily=replace(as.character(total$superfamily), as.character(total$superfamily)=="Anisozygoptera", "RANDOM")
+
+total$focalclade=ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Aeshnidae),1,all),"Aeshnidae",
+                      ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Gomphidae_Petaluridae),1,all),"Gomphidae+Petaluridae",
+                      ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Libellulidae),1,all),"Libellulidae","RANDOM")))
+
+
+total$type=ifelse(total$common==TRUE,"Concordant",ifelse(total$sig==FALSE & total$common==FALSE,"ILS","Introgression"))
+
+
+
+total_mixprop=melt(total[total$sig==TRUE & total$common==FALSE ,c("mixprop2","Order","Suborder","Superfamily","focalclade")],value.name="taxon",id=c("mixprop2"))
+total_mixprop=total_mixprop[total_mixprop$taxon!="RANDOM",]
+total_mixprop$variable=replace(as.character(total_mixprop$variable),as.character(total_mixprop$variable)=="focalclade","Focal clade")
+total_mixprop$variable_f=factor(total_mixprop$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+
+
+g1=ggplot(total_mixprop, aes(x=taxon, y=mixprop2))+geom_violin(fill='salmon')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=10))+ylab(expression(pi[2]))+xlab("")+ggtitle("A")
+
+total_p=melt(total[ ,c("type","Order","Suborder","Superfamily","focalclade")],id="type",value.name="taxon")
+total_p=total_p[total_p$taxon!="RANDOM" & total_p$type!="Concordant",]
+total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
+total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+
+g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=type))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=10),legend.position=c(0.11,-0.165) ,legend.direction="horizontal")+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("gray48", "salmon"),name="")+ggtitle("B")
+
+quartz(width=8,height=8)
+grid.arrange(g1,g2,nrow=2)
+
+
+Epio=total[apply(total[,c("P1","P2","P3")]=="Epiophlebia_superstes",1,any) & total$outgroup!="Epiophlebia_superstes",]
+Epio$ipair=get_intropair(Epio,"Epiophlebia_superstes")
+
+Epio_sig=Epio[Epio$sig==TRUE & Epio$common==FALSE,]
+
+
+    
+
+
+
