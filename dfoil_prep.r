@@ -6,8 +6,7 @@ library('gridExtra')
 library('ggplot2')
 library('pals')
 library('reshape2')
-library('umap')
-library("phateR")
+
 
 
 dfoil_select=function(phy,id)
@@ -75,8 +74,13 @@ Aeshnoidea=c(extract.clade(tt,137)$tip.label,extract.clade(tt,144)$tip.label)
 Cordulegastroidea=extract.clade(tt,151)$tip.label
 Libelluloidea=extract.clade(tt,156)$tip.label
 
+Aeshnidae=extract.clade(tt,137)$tip.label
+Gomphidae_Petaluridae=extract.clade(tt,144)$tip.label
+Libellulidae=extract.clade(tt,161)$tip.label
 
-total=read.csv("/Users/Anton/Downloads/dfoil_results.txt")
+
+
+total=read.csv("/Users/Anton/Downloads/dfoil_results.txt",stringsAsFactors=FALSE)
 names(total)=names_v
 total=total[total$T12<total$T34,]
 
@@ -93,39 +97,55 @@ total$Superfamily=ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Les
                        ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Cordulegastroidea),1,all),"Cordulegastroidea",
                        ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Libelluloidea),1,all),"Libelluloidea","RANDOM"))))))
 
+total$focalclade=ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Aeshnidae),1,all),"Aeshnidae",
+                      ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Gomphidae_Petaluridae),1,all),"Gomphidae+Petaluridae",
+                      ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Libellulidae),1,all),"Libellulidae","RANDOM")))
+
+
+
+
+
+
+
 total$introgressionid=ifelse(total$introgression=="none","None",
                              ifelse(total$introgression=="123" | total$introgression=="124","Ancestral","Inter-group"))
 
 
 
+total_ord=melt(total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat","Order","Superfamily","Suborder","focalclade")],measure.vars = c("DFO_stat","DIL_stat","DFI_stat","DOL_stat"),value.name="stat")
+total_ord=melt(total_ord,id=c("variable","stat"),value.name="taxon",variable.name="class")
+total_ord$class=replace(as.character(total_ord$class),as.character(total_ord$class)=="focalclade","Focal clade")
+total_ord$variable_f=factor(total_ord$class, levels=c("Order","Suborder","Superfamily","Focal clade"))
+total_ord$variable=ifelse(total_ord$variable=="DFO_stat","D[FO]",ifelse(total_ord$variable=="DIL_stat","D[IL]",ifelse(total_ord$variable=="DFI_stat","D[FI]","D[OL]")))
 
-#Total DFOIL results
-#dat1=melt(total[,c("introgressionid","Order","Superfamily","Suborder")],id.vars=c("introgressionid"))
-#dat1=dat1[dat1$value!="RANDOM",]
 
 
-total_order=melt(total[,c("introgressionid","Order","Supefamily","Suborder")])
-g1=ggplot(total_order, aes(x=Order, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+labs(x="Order", y = "")+scale_fill_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="Introgression")
-total_suborder=melt(total[,c("introgressionid","Suborder")])
-g2=ggplot(total_suborder, aes(x=Suborder, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+geom_bar(position="fill")+labs(x="Suborder", y = "Proportion of Quintets")+scale_fill_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="Introgression")
-total_superfamily=melt(total[total$Superfamily!="RANDOM",c("introgressionid","Superfamily")])
-g3=ggplot(total_superfamily, aes(x=Superfamily, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+geom_bar(position="fill")+labs(x="Superfamily", y = "")+scale_fill_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="Introgression")
+###############Plotting 
+#Remove Lestoidea: only 2 cases => cant estimate violin plots
+g1=ggplot(total_ord[total_ord$taxon!="RANDOM",], aes(x=taxon, y=stat,fill=variable))+geom_violin(lwd=0.1)+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="red",position=position_dodge(0.9))+geom_boxplot(width=0.01,outlier.size=-1,position=position_dodge(0.9))+theme(axis.text.x = element_text(size = 8,angle=10))+ylab("Value")+xlab("")+scale_fill_manual(name="",values=c("black","darkgrey","grey90","white"),labels=expression(D[FI],D[FO],D[IL],D[OL]))+theme(legend.position=c(0.5,1.22),legend.direction="horizontal",legend.background = element_blank())+ggtitle("A") 
+                        
 
-quartz(width=6.8,height=7.1) 
-grid.arrange(g1,g2,g3,nrow=3)
-quartz.save("dfoil_total.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
 
-#Dimentionality reduction
-total_dr=total[,c(8:23)]/apply(total[,c(7:23)],1,sum)
-phate_out=phate(total_dr)
-umap_out=umap(total_dr)
+total_p=melt(total[,c("introgressionid","Order","Suborder","Superfamily","focalclade")],id="introgressionid",value.name="taxon")
+total_p=total_p[total_p$taxon!="RANDOM",]
+total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
+total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+
+g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=10),legend.position=c(0.5,1.22) ,legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("chocolate1","gold","darkslateblue"),name="")+ggtitle("B")
+
+
+
+
+
+#tSNE
+total_dr=total[,c(8:23)]/apply(total[,c(8:23)],1,sum)
 tsne_out=Rtsne(total_dr)
 
 #Main dr figure
 dat1=data.frame(tsne_out$Y)
 names(dat1)=c("tSNE1","tSNE2")
 introg_d=cbind(dat1,introgressionid=total[,c("introgressionid")])
-introg_d=introg_d[order(introg_d$introgressionid,decreasing = T),]
+#introg_d=introg_d[order(introg_d$introgressionid,decreasing = T),]
 dat1=cbind(dat1,total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat")])
 dat1=melt(dat1,id.vars=c("tSNE1","tSNE2"))
 dat1$variable=ifelse(dat1$variable=="DFO_stat","D[FO]",ifelse(dat1$variable=="DIL_stat","D[IL]",ifelse(dat1$variable=="DFI_stat","D[FI]","D[OL]")))
@@ -133,42 +153,25 @@ dat1$variable=ifelse(dat1$variable=="DFO_stat","D[FO]",ifelse(dat1$variable=="DI
 
 
 
-t1=ggplot(introg_d) + geom_point(aes(tSNE1, tSNE2, color = introgressionid),size=0.2)+ scale_color_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ggtitle("A")+ theme(legend.position=c(0.90, 0.2),legend.background = element_blank())
-t2=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = value),size=0.01)+facet_wrap(~variable,nrow = 2,labeller=label_parsed)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+ggtitle("B")+theme(legend.position=c(0.5,0.5), legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"))
-quartz(width=4.6,height=9.7) 
-grid.arrange(t1,t2,nrow=2)
-quartz.save("dfoil_tsne.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
-quartz.save("dfoil_tsne.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+t1=ggplot(introg_d) + geom_point(aes(tSNE1, tSNE2, color = introgressionid),size=0.2)+ scale_color_manual(values=c("chocolate1","gold","darkslateblue"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ theme(legend.position=c(0.6,1.1),legend.background = element_blank(),legend.direction="horizontal")+ggtitle("C")
+t2=ggplot(dat1[dat1$value>-0.5 & dat1$value<0.5,]) + geom_point(aes(tSNE1, tSNE2, color = value),size=0.01)+facet_wrap(~variable,nrow = 2,labeller=label_parsed)+scale_color_gradientn(colors = viridis(100),name="")+theme_classic()+ggtitle("D")+theme(legend.position=c(1.2,0.5), legend.direction="vertical",legend.background = element_blank(),strip.background = element_rect(colour = "white", fill = "white"))
+
+
+
+lay = rbind(c(1,1,1,1,1,1),
+             c(2,2,2,2,2,2),
+           c(3,3,NA,4,4,NA))
+
+
+quartz(width=8.5,height=9)
+grid.arrange(g1,g2,t1,t2,nrow=3,layout_matrix = lay)
+quartz.save("dfoil_distribution.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
+quartz.save("dfoil_distribution.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
 
 
 
 
 
-#Suppl dr figure 
-#PHATE
-dat1=data.frame(phate_out$embedding)
-names(dat1)=c("PHATE1","PHATE2")
-introg_d=cbind(dat1,introgressionid=total[,c("introgressionid")])
-introg_d=introg_d[order(introg_d$introgressionid,decreasing = T),]
-dat1=cbind(dat1,total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat")])
-dat1=melt(dat1,id.vars=c("PHATE1","PHATE2"))
-dat1$variable=ifelse(dat1$variable=="DFO_stat","D[FO]",ifelse(dat1$variable=="DIL_stat","D[IL]",ifelse(dat1$variable=="DFI_stat","D[FI]","D[OL]")))
-t3=ggplot(introg_d) + geom_point(aes(PHATE1, PHATE2, color = introgressionid),size=0.2)+ scale_color_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ggtitle("A")+ theme(legend.position=c(0.90, 0.2),legend.background = element_blank())
-t4=ggplot(dat1) + geom_point(aes(PHATE1, PHATE2, color = value),size=0.01)+facet_wrap(~variable,nrow = 2,labeller=label_parsed)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c(0.5,0.5), legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"))
-#UMAP
-dat1=data.frame(umap_out$layout)
-names(dat1)=c("UMAP1","UMAP2")
-introg_d=cbind(dat1,introgressionid=total[,c("introgressionid")])
-introg_d=introg_d[order(introg_d$introgressionid,decreasing = T),]
-dat1=cbind(dat1,total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat")])
-dat1=melt(dat1,id.vars=c("UMAP1","UMAP2"))
-dat1$variable=ifelse(dat1$variable=="DFO_stat","D[FO]",ifelse(dat1$variable=="DIL_stat","D[IL]",ifelse(dat1$variable=="DFI_stat","D[FI]","D[OL]")))
-t5=ggplot(introg_d) + geom_point(aes(UMAP1, UMAP2, color = introgressionid),size=0.2)+ scale_color_manual(values=c("#f0ad4e", "#5cb85c","#337ab7"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ggtitle("B")+ theme(legend.position=c(0.50, 0.2),legend.background = element_blank())
-t6=ggplot(dat1) + geom_point(aes(UMAP1, UMAP2, color = value),size=0.01)+facet_wrap(~variable,nrow = 2,labeller=label_parsed)+scale_color_gradientn(colors = tol(12),name="")+theme_classic()+theme(legend.position=c(0.5,0.5), legend.background = element_blank(), legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"))
-quartz(width=8.6,height=9)
-grid.arrange(t3,t5,t4,t6,nrow=2,ncol=2)
-quartz.save("dfoil_phate_umap_suppl.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
-quartz.save("dfoil_phate_umap_suppl.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
 
 
 

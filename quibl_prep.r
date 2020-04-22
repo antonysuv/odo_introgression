@@ -169,7 +169,7 @@ Aeshnoidea=c(extract.clade(tt,137)$tip.label,extract.clade(tt,144)$tip.label)
 Calopterygoidea=extract.clade(tt,91)$tip.label
 Coenagrionoidea=extract.clade(tt,109)$tip.label
 Lestoidea=extract.clade(tt,131)$tip.label
-Cardulegastroidea=extract.clade(tt,151)$tip.label
+Cordulegastroidea=extract.clade(tt,151)$tip.label
 Libelluloidea=extract.clade(tt,156)$tip.label
 Zygoptera=c(Calopterygoidea,Coenagrionoidea,Lestoidea)
 Anisozygoptera=c("Epiophlebia_superstes")
@@ -193,23 +193,46 @@ all_triplets(Anisozygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all
 ################################################################ RUN QuiBL ########################################################################
 
 
-total=read.csv("/Users/Anton/Downloads/quibl_all.txt")
-total=total[complete.cases(total), ] 
-total$BICdiff = total$BIC2-total$BIC1
+total=read.csv("/Users/Anton/Downloads/quibl_all.txt",stringsAsFactors=FALSE)
 P1=gsub(" ","_",paste(unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",1)),unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",2))))
 P2=gsub(" ","_",paste(unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",3)),unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",4))))
 P3=gsub(" ","_",paste(unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",5)),unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",6))))
 total$P1=P1
 total$P2=P2
 total$P3=P3
-total=total[total$outgroup!="Epiophlebia_superstes",]
-#total=total %>% distinct(triplet,C2 ,  mixprop1,  mixprop2, lambda2Dist, BIC2Dist ,   BIC1Dist, count ,.keep_all = T)
-total_min=data.frame(total %>%  group_by(triplet) %>% filter(count!=max(count)))
-total_max=data.frame(total %>%  group_by(triplet) %>% filter(count!=max(count)))
-total_min$common=FALSE
-total_max$common=TRUE
+total=total[!(!apply(apply(total[,c("P1","P2","P3")],2,"%in%","Epiophlebia_superstes"),1,any) & total$superfamily=="Anisozygoptera"),]
+total$common=FALSE
+for (trip in unique(as.character(total$triplet)))
+{
+  maxVal=max(subset(total,triplet==trip)$count)
+  # Handle ties
+  if(nrow(total[which(total$triplet==trip & total$count==maxVal),])>1)
+  {
+     total[which(total$triplet==trip & total$count==maxVal),][1,]$common=TRUE 
+  }else{    
+    total[which(total$triplet==trip & total$count==maxVal),]$common=TRUE
+  }    
+}
+
+
+
+total_min=total[total$common==F,]
+total_max=total[total$common==T,]
+
+chiP=c()
+for (trip in unique(as.character(total_min$triplet)))
+{
+    p_v=chisq.test(subset(total_min,triplet==trip)$count)$p.value
+    chiP=c(chiP,p_v)
+}    
+chiP=p.adjust(chiP,method="fdr")
+total_min$Q=rep(chiP,each=2)
+total_max$Q=0
 total=rbind(total_min,total_max)
-total$sig=total$BICdiff < -20
+total=total[complete.cases(total), ] 
+total$BICdiff = total$BIC2-total$BIC1
+total$Qsig = total$Q<0.05
+total$sig=total$BICdiff < -10
 total$Order="Odonata"
 
 total$Suborder=ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Zygoptera),1,all),"Zygoptera",
@@ -217,17 +240,19 @@ total$Suborder=ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Zygoptera),
                       ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Anisozygoptera),1,any),"Anisozygoptera","RANDOM")))
 
 total$Superfamily=replace(as.character(total$superfamily), as.character(total$superfamily)=="Anisozygoptera", "RANDOM")
+total[total$Superfamily=="Cardulegastroidea","Superfamily"]="Cordulegastroidea"
 
 total$focalclade=ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Aeshnidae),1,all),"Aeshnidae",
                       ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Gomphidae_Petaluridae),1,all),"Gomphidae+Petaluridae",
                       ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Libellulidae),1,all),"Libellulidae","RANDOM")))
 
 
-total$type=ifelse(total$common==TRUE,"Concordant",ifelse(total$sig==FALSE & total$common==FALSE,"ILS","Introgression"))
+total$type=ifelse(total$common==TRUE & total$sig==TRUE,"Concordant",ifelse(total$common==TRUE & total$sig==FALSE,"Extreme ILS",ifelse(total$sig==FALSE & total$common==FALSE,"ILS","Introgression+ILS")))
+total$Qtype=ifelse(total$common==TRUE & total$sig==TRUE,"Concordant",ifelse(total$common==TRUE & total$sig==FALSE,"Extreme ILS",ifelse(total$Qsig==FALSE & total$common==FALSE ,"ILS","Introgression+ILS")))
 
 
 
-total_mixprop=melt(total[total$sig==TRUE & total$common==FALSE ,c("mixprop2","Order","Suborder","Superfamily","focalclade")],value.name="taxon",id=c("mixprop2"))
+total_mixprop=melt(total[total$type=="Introgression+ILS" ,c("mixprop2","Order","Suborder","Superfamily","focalclade")],value.name="taxon",id=c("mixprop2"))
 total_mixprop=total_mixprop[total_mixprop$taxon!="RANDOM",]
 total_mixprop$variable=replace(as.character(total_mixprop$variable),as.character(total_mixprop$variable)=="focalclade","Focal clade")
 total_mixprop$variable_f=factor(total_mixprop$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
@@ -235,15 +260,46 @@ total_mixprop$variable_f=factor(total_mixprop$variable, levels=c("Order","Subord
 
 g1=ggplot(total_mixprop, aes(x=taxon, y=mixprop2))+geom_violin(fill='salmon')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=10))+ylab(expression(pi[2]))+xlab("")+ggtitle("A")
 
+total_mixprop=melt(total[total$Qtype=="Introgression+ILS" ,c("mixprop2","Order","Suborder","Superfamily","focalclade")],value.name="taxon",id=c("mixprop2"))
+total_mixprop=total_mixprop[total_mixprop$taxon!="RANDOM",]
+emptydata=data.frame(mixprop2=c(0,0,0,0),variable=c("Superfamily","Superfamily","focalclade","focalclade"),taxon=c("Cordulegastroidea","Lestoidea","Aeshnidae","Gomphidae+Petaluridae"))
+total_mixprop=rbind(total_mixprop,emptydata)
+total_mixprop$variable=replace(as.character(total_mixprop$variable),as.character(total_mixprop$variable)=="focalclade","Focal clade")
+total_mixprop$variable_f=factor(total_mixprop$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+
+gq1=ggplot(total_mixprop, aes(x=taxon, y=mixprop2))+geom_violin(fill='salmon')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=10))+ylab(expression(pi[2]))+xlab("")+ggtitle("C")
+
+
 total_p=melt(total[ ,c("type","Order","Suborder","Superfamily","focalclade")],id="type",value.name="taxon")
-total_p=total_p[total_p$taxon!="RANDOM" & total_p$type!="Concordant",]
+total_p=total_p[total_p$taxon!="RANDOM",]
 total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
 total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
 
-g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=type))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=10),legend.position=c(0.11,-0.165) ,legend.direction="horizontal")+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("gray48", "salmon"),name="")+ggtitle("B")
+g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=type))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=10),legend.position=c("top") ,legend.direction="horizontal")+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("gray48","orange","gold", "salmon"),name="")+ggtitle("B")
 
-quartz(width=8,height=8)
-grid.arrange(g1,g2,nrow=2)
+total_p=melt(total[ ,c("Qtype","Order","Suborder","Superfamily","focalclade")],id="Qtype",value.name="taxon")
+total_p=total_p[total_p$taxon!="RANDOM",]
+total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
+total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+
+gq2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=Qtype))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=10),legend.position=c("top") ,legend.direction="horizontal")+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("gray48","orange","gold", "salmon"),name="")+ggtitle("D")
+
+
+
+
+
+quartz(width=15.4,height=10.6)
+grid.arrange(g1,gq1,g2,gq2,nrow=2,ncol=2)
+quartz.save("quibl_distribution.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
+quartz.save("quibl_distribution.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
+mutate(the_rank  = rank(-value, ties.method = "random"))
+
+
+#STATS for Focal clades 
+
+
+
 
 
 Epio=total[apply(total[,c("P1","P2","P3")]=="Epiophlebia_superstes",1,any) & total$outgroup!="Epiophlebia_superstes",]

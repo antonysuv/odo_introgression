@@ -1,0 +1,205 @@
+library('ape')
+library('phytools')
+library('phangorn')
+library('Rtsne')
+library('MASS')
+library('gridExtra')
+library('ggplot2')
+library('pals')
+library('reshape2')
+
+
+
+get_density = function(x, y, ...) 
+{
+  dens = MASS::kde2d(x, y, ...)
+  ix = findInterval(x, dens$x)
+  iy = findInterval(y, dens$y)
+  ii = cbind(ix, iy)
+  return(dens$z[ii])
+}
+
+
+list_triples=function(taxa)
+{
+    res=rbind()
+    ks = taxa
+    for (i in 1:(length(ks)-2))
+    {
+        for (j in (i+1):(length(ks)-1))
+        {
+           for (k in (j+1):length(ks))
+           {
+               res=rbind(res,c(ks[i],ks[j], ks[k]))
+               res=rbind(res,c(ks[i],ks[k], ks[j]))
+               res=rbind(res,c(ks[j],ks[i], ks[k]))
+               
+            }
+        }    
+    }
+    write.table(res,"tri.txt",quote=F,row.names=F,col.names=F)
+    
+}        
+    
+taxa_map=function(tree)
+{
+    phy=read.tree(tree)
+    d=data.frame(phy$tip.label,paste("P",1:length(phy$tip.label),"_",phy$tip.label,sep=""))
+    write.table(d,"taxa_map.txt",quote=F,row.names=F,col.names=F)
+}
+    
+tripls_from_taxa=function(taxa,taxa_map)
+{
+    d=read.table(taxa_map)
+    taxa=as.vector(d[d$V1 %in% taxa,"V2"])
+    list_triples(taxa)
+}
+
+
+taxa_map("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
+tripls_from_taxa(gg,"taxa_map.txt") 
+
+
+
+tt=read.table("tri.txt")
+
+
+################################################################ RUN HyDe ######################################################################## 
+
+
+
+tt=as.character(read.table("taxa_map.txt")$V2)
+Zygoptera=tt[1:48]
+Anisoptera=tt[50:83]
+Anisozygoptera=tt[49]
+Lestoidea=tt[44:48]
+Calopterygoidea=tt[1:19]
+Coenagrionoidea=tt[20:42]
+Aeshnoidea=tt[50:63]
+Cordulegastroidea=tt[64:69]
+Libelluloidea=tt[70:83]
+
+Aeshnidae=tt[50:56]
+Gomphidae_Petaluridae=tt[57:63]
+Libellulidae=tt[75:83]
+
+
+total=read.table("hyde_all_tri-out_noephemera.txt",header=T)
+total=total[complete.cases(total),]
+total$Pvalue=p.adjust(total$Pvalue,method="bonferroni")
+total$D=(total$ABBA-total$ABAB)/(total$ABBA+total$ABAB)
+total=total[total$Gamma<=1 & total$Gamma>=0, ]
+
+total$Order="Odonata"
+
+total$Suborder=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Zygoptera),1,all),"Zygoptera",
+                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Anisoptera),1,all),"Anisoptera",
+                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Anisozygoptera),1,any),"Anisozygoptera","RANDOM")))
+
+total$Superfamily=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Lestoidea),1,all),"Lestoidea",
+                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Calopterygoidea),1,all),"Calopterygoidea",
+                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Coenagrionoidea),1,all),"Coenagrionoidea",
+                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Aeshnoidea),1,all),"Aeshnoidea",
+                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Cordulegastroidea),1,all),"Cordulegastroidea",
+                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Libelluloidea),1,all),"Libelluloidea","RANDOM"))))))       
+                              
+total$focalclade=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Aeshnidae),1,all),"Aeshnidae",
+                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Gomphidae_Petaluridae),1,all),"Gomphidae+Petaluridae",
+                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Libellulidae),1,all),"Libellulidae","RANDOM")))
+
+
+
+
+#D and Gamma distributions Violin plots
+
+total_ord=melt(total[,c("D","Gamma","Pvalue","Order","Suborder","Superfamily","focalclade")],value.name="taxon",id=c("D","Gamma","Pvalue"))
+total_ord=total_ord[total_ord$taxon!="RANDOM",]
+total_ord$variable=replace(as.character(total_ord$variable),as.character(total_ord$variable)=="focalclade","Focal clade")
+total_ord$variable_f=factor(total_ord$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+
+a1=ggplot(total_ord, aes(x=taxon, y=D))+geom_violin(fill='olivedrab3')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=10))+ylab("D")+xlab("")+ggtitle("A")
+
+a2=ggplot(total_ord[total_ord$Pval<10^-6,], aes(x=taxon, y=Gamma))+geom_violin(fill='cornflowerblue')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=10))+ylab(expression(gamma))+xlab("")+ggtitle("B")
+
+
+#tSNE
+total_dr=total[,c(7:21)]/apply(total[,c(7:21)],1,sum)
+tsne_out=Rtsne(total_dr)
+dat1=data.frame(tsne_out$Y)
+names(dat1)=c("tSNE1","tSNE2")
+dat1=cbind(dat1,introgressionid=ifelse(total$Pvalue<10^-6,"Introgression","None"))
+dat1=cbind(dat1,total[,c("Gamma","D")])
+
+a3=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = D),size=0.01)+scale_color_gradientn(colors = viridis(12),name="D")+theme_classic()+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank())+ggtitle("C")+ guides(fill=guide_legend(title="D"))
+
+a4=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = introgressionid),size=0.001)+ scale_color_manual(values=c("gold","darkslateblue"),name="")+theme_classic()+guides(colour= guide_legend(override.aes = list(size=3)))+ theme(legend.position=c(0.5,1.1),legend.direction="horizontal",legend.background = element_blank())+ggtitle("D")
+
+a5=ggplot(dat1[dat1$introgressionid=="Introgression",]) + geom_point(aes(tSNE1, tSNE2, color = Gamma),size=0.01)+scale_color_gradientn(colors = viridis(12),name=expression(gamma))+theme_classic()+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",legend.background = element_blank())+ggtitle("E")
+
+lay = rbind(c(1,1,1,1,1,1),
+             c(2,2,2,2,2,2),
+           c(3,3,4,4,5,5))
+
+quartz(width=8.5,height=9) 
+grid.arrange(a1,a2,a3,a4,a5,layout_matrix = lay)
+
+quartz.save("hyde_distribution.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
+quartz.save("hyde_distribution.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Total tree test
+total=read.table("hyde_all_tri-out_noephemera.txt",header=T)
+total=total[complete.cases(total), ]
+total$D=(total$ABBA-total$ABAB)/(total$ABBA+total$ABAB)
+total=total[total$Gamma > 0 & total$Gamma < 1, ]
+total$Pvalue=p.adjust(total$Pvalue,method="bonferroni")
+
+dat=total[,c("Gamma","D","Pvalue")]
+g1=ggplot(dat)+geom_histogram(aes(Gamma),bins=500,col="black")+labs(x = expression(gamma),y="N quartets")+ggtitle("A")
+g2=ggplot(dat)+geom_histogram(aes(D),bins=500,col="black")+labs(x = "D",y="N quartets")+ggtitle("")
+dat$density = get_density(dat$Gamma, dat$D, n = 100)
+g3=ggplot(dat) + geom_point(aes(Gamma, D, color = density),size=0.1)+scale_color_gradientn(colors = viridis(30))+labs(x = expression(gamma),y="D")+ggtitle("")
+g4=ggplot(dat) + geom_point(aes(Gamma, D, color = Pvalue),size=0.1)+scale_color_gradientn(colors = viridis(30))+labs(x = expression(gamma),y="D")+ggtitle("")
+
+dat=dat[dat$Pvalue<10^-6,c("Gamma","D","Pvalue")]
+g5=ggplot(dat)+geom_histogram(aes(Gamma),bins=500,col="black")+labs(x = expression(gamma),y="N quartets")+ggtitle("B")
+g6=ggplot(dat)+geom_histogram(aes(D),bins=500,col="black")+labs(x = "D",y="N quartets")+ggtitle("")
+dat$density = get_density(dat$Gamma, dat$D, n = 100)
+g7=ggplot(dat) + geom_point(aes(Gamma, D, color = density),size=0.1)+scale_color_gradientn(colors = viridis(30))+labs(x = expression(gamma),y="D")+ggtitle("")
+g8=ggplot(dat) + geom_point(aes(Gamma, D, color = Pvalue),size=0.1)+scale_color_gradientn(colors = viridis(30))+labs(x = expression(gamma),y="D")+ggtitle("")
+
+grid.arrange(g1,g2,g3,g4,g5,g6,g7,g8,ncol=4,nrow=2)
+quartz.save("hyde_total", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
