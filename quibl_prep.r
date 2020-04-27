@@ -4,6 +4,7 @@ library('pals')
 library('reshape2')
 library('dplyr')
 library('gridExtra')
+library("svMisc")
 
 
 .write.tree2 <- function(phy, digits = 10, tree.prefix = "", check_tips)
@@ -134,6 +135,7 @@ all_triplets=function(taxa_list,gene_trees,dir_name)
     taxa_combn=combn(taxa_list,m=3)
     for (i in 1:ncol(taxa_combn))
     {
+        progress(i,ncol(taxa_combn))
         triplet=taxa_combn[,i]
         quible_trees(triplet,gene_trees,i)
     }    
@@ -171,13 +173,32 @@ Coenagrionoidea=extract.clade(tt,109)$tip.label
 Lestoidea=extract.clade(tt,131)$tip.label
 Cordulegastroidea=extract.clade(tt,151)$tip.label
 Libelluloidea=extract.clade(tt,156)$tip.label
+
 Zygoptera=c(Calopterygoidea,Coenagrionoidea,Lestoidea)
 Anisozygoptera=c("Epiophlebia_superstes")
-Anisoptera=c(Aeshnoidea,Cardulegastroidea,Libelluloidea)
+Anisoptera=c(Aeshnoidea,Cordulegastroidea,Libelluloidea)
 
 Aeshnidae=extract.clade(tt,137)$tip.label
 Gomphidae_Petaluridae=extract.clade(tt,144)$tip.label
 Libellulidae=extract.clade(tt,161)$tip.label
+
+
+
+
+
+Anisozygoptera=c(extract.clade(tt,131)$tip.label,extract.clade(tt,137)$tip.label,"Protosticta_beaumonti","Phenes_raptor","Ischnura_elegans" ,"Copera_marginipes","Epiophlebia_superstes","Ladona_fulva")
+Zygoptera=c(extract.clade(tt,88)$tip.label)
+Anisoptera=c(extract.clade(tt,136)$tip.label)
+
+all_triplets(Anisozygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Anisozygoptera_quibl")
+all_triplets(Zygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Zygoptera_quibl")
+all_triplets(Anisoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Anisoptera_quibl")
+
+
+
+
+
+
 
 
 all_triplets(Aeshnoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Aeshnoidea_quibl")
@@ -201,6 +222,19 @@ total$P1=P1
 total$P2=P2
 total$P3=P3
 total=total[!(!apply(apply(total[,c("P1","P2","P3")],2,"%in%","Epiophlebia_superstes"),1,any) & total$superfamily=="Anisozygoptera"),]
+
+
+#Chisq test for extreme ILS
+chiPtri=c()
+for (trip in unique(as.character(total$triplet)))
+{
+    p_v=chisq.test(subset(total,triplet==trip)$count)$p.value
+    chiPtri=c(chiPtri,p_v)
+}    
+chiPtri=p.adjust(chiPtri,method="fdr")
+total$Qtri=rep(chiPtri,each=3)
+
+#Identify largest triplet count 
 total$common=FALSE
 for (trip in unique(as.character(total$triplet)))
 {
@@ -215,10 +249,10 @@ for (trip in unique(as.character(total$triplet)))
 }
 
 
-
 total_min=total[total$common==F,]
 total_max=total[total$common==T,]
 
+#Chisq test for Introgression vs ILS
 chiP=c()
 for (trip in unique(as.character(total_min$triplet)))
 {
@@ -232,6 +266,7 @@ total=rbind(total_min,total_max)
 total=total[complete.cases(total), ] 
 total$BICdiff = total$BIC2-total$BIC1
 total$Qsig = total$Q<0.05
+total$Qtrisig = total$Qtri<0.05
 total$sig=total$BICdiff < -10
 total$Order="Odonata"
 
@@ -248,7 +283,7 @@ total$focalclade=ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Aeshnidae
 
 
 total$type=ifelse(total$common==TRUE & total$sig==TRUE,"Concordant",ifelse(total$common==TRUE & total$sig==FALSE,"Extreme ILS",ifelse(total$sig==FALSE & total$common==FALSE,"ILS","Introgression+ILS")))
-total$Qtype=ifelse(total$common==TRUE & total$sig==TRUE,"Concordant",ifelse(total$common==TRUE & total$sig==FALSE,"Extreme ILS",ifelse(total$Qsig==FALSE & total$common==FALSE ,"ILS","Introgression+ILS")))
+total$Qtype=ifelse(total$common==TRUE & total$Qtrisig==TRUE,"Concordant",ifelse(total$common==TRUE & total$Qtrisig==FALSE,"Extreme ILS",ifelse(total$Qsig==FALSE & total$common==FALSE ,"ILS","Introgression+ILS")))
 
 
 

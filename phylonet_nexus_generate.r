@@ -66,7 +66,7 @@ libs=c("Pantala_flavescens","Sympetrum_frequens","Rhyothemis_variegata","Erythro
 phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",anax,1)
 phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",gompeta,1)
 phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",libs,1)
-phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",epio,1) # change to MPL "InferNetwork_MPL (all) 1 -s fixtr -di -pl 15 -x 1 -h {Epiophlebia_superstes} -n 10;"
+phylonet_chunk_topo("BUSCO50_dna_pasta_nopart_iqtree_root.tre","BUSCO50_dna_pasta_iqtree_all_wboot",epio,1) # change to MPL "InferNetwork_MPL (all) 1 -s fixtr -di -pl 15 -b 0.9 -x 100 -h {Epiophlebia_superstes} -n 5;"
 
 
 
