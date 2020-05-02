@@ -140,7 +140,25 @@ all_triplets=function(taxa_list,gene_trees,dir_name)
         quible_trees(triplet,gene_trees,i)
     }    
     setwd("..")
+}  
+
+all_triplets_az=function(taxa_list,gene_trees,dir_name)
+{
+    dir.create(dir_name)
+    setwd(dir_name)
+    taxa_combn=combn(taxa_list,m=2)
+    taxa_combn=rbind(taxa_combn,rep("Epiophlebia_superstes",ncol(taxa_combn)))
+    for (i in 1:ncol(taxa_combn))
+    {
+        progress(i,ncol(taxa_combn))
+        triplet=taxa_combn[,i]
+        quible_trees(triplet,gene_trees,i)
+    }    
+    setwd("..")
 }    
+
+
+
 
 
 get_intropair=function(m,target_sp)
@@ -159,9 +177,19 @@ get_intropair=function(m,target_sp)
 
 
 
+tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
+
+Anisozygoptera=drop.tip(tt,c("Epiophlebia_superstes","Ephemera_danica", "Isonychia_kiangsinensis"))$tip.label
+Zygoptera=c(extract.clade(tt,88)$tip.label)
+Anisoptera=c(extract.clade(tt,136)$tip.label)
+
+all_triplets_az(Anisozygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Anisozygoptera_quibl")
+all_triplets(Zygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Zygoptera_quibl")
+all_triplets(Anisoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Anisoptera_quibl")
 
 
 
+################################################################ RUN QuiBL ########################################################################
 
 
 tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
@@ -184,34 +212,6 @@ Libellulidae=extract.clade(tt,161)$tip.label
 
 
 
-
-
-Anisozygoptera=c(extract.clade(tt,131)$tip.label,extract.clade(tt,137)$tip.label,"Protosticta_beaumonti","Phenes_raptor","Ischnura_elegans" ,"Copera_marginipes","Epiophlebia_superstes","Ladona_fulva")
-Zygoptera=c(extract.clade(tt,88)$tip.label)
-Anisoptera=c(extract.clade(tt,136)$tip.label)
-
-all_triplets(Anisozygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Anisozygoptera_quibl")
-all_triplets(Zygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Zygoptera_quibl")
-all_triplets(Anisoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Anisoptera_quibl")
-
-
-
-
-
-
-
-
-all_triplets(Aeshnoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Aeshnoidea_quibl")
-all_triplets(Calopterygoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Calopterygoidea_quibl")
-all_triplets(Coenagrionoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Coenagrionoidea_quibl")
-all_triplets(Lestoidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Lestoidea_quibl")
-all_triplets(Cardulegastroidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Cardulegastroidea_quibl")
-all_triplets(Libelluloidea,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Libelluloidea_quibl")
-all_triplets(Anisozygoptera,"/Users/Anton/Downloads/BUSCO50_dna_pasta_iqtree_all_wboot","Anisozygoptera_quibl")
-
-
-
-################################################################ RUN QuiBL ########################################################################
 
 
 total=read.csv("/Users/Anton/Downloads/quibl_all.txt",stringsAsFactors=FALSE)

@@ -50,14 +50,47 @@ dfoil_select_az=function(phy,id)
 
 tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
 Outgroup=c("Ephemera_danica")
-Anisozygoptera=keep.tip(tt,c(extract.clade(tt,131)$tip.label,extract.clade(tt,137)$tip.label,"Protosticta_beaumonti","Phenes_raptor","Ischnura_elegans" ,"Copera_marginipes","Epiophlebia_superstes","Ladona_fulva",Outgroup))
 Zygoptera=keep.tip(tt,c(extract.clade(tt,88)$tip.label,Outgroup))
 Anisoptera=keep.tip(tt,c(extract.clade(tt,136)$tip.label,Outgroup))
 
 
+
+dfoil_select_az=function(phy,id)
+{
+    dfoil_out=c()
+    taxa_combn=combn(drop.tip(phy,c("Epiophlebia_superstes","Ephemera_danica", "Isonychia_kiangsinensis"))$tip.label,m=3)
+    taxa_combn=rbind(taxa_combn,rep("Epiophlebia_superstes",ncol(taxa_combn)))
+    taxa_combn=rbind(taxa_combn,rep("Ephemera_danica",ncol(taxa_combn)))
+    test_phy=read.tree(text="((('A','A'),('A','A')),A);")
+    for (i in 1:ncol(taxa_combn))
+    {
+        progress(i,ncol(taxa_combn))
+        sub_phy=keep.tip(phy,taxa_combn[,i])
+        sub_phy_dup=sub_phy
+        sub_phy_dup$tip.label=rep("A",length(sub_phy_dup$tip.label))
+        if (all.equal.phylo(sub_phy_dup,test_phy,use.edge.length=F,use.tip.label=F))
+        {
+            node_number_order=rev(order(node.depth.edgelength(sub_phy)[(length(sub_phy$tip.label)+1):length(node.depth.edgelength(sub_phy))])+length(sub_phy$tip.label))[1:2]
+            taxa_order=c()
+            for (n in node_number_order)
+            {
+               node_taxa=extract.clade(sub_phy,n)$tip.label
+               taxa_order=c(taxa_order,node_taxa) 
+            }
+            dfoil_order=c(taxa_order,sub_phy$tip.label[!sub_phy$tip.label %in% taxa_order])
+            dfoil_out=c(dfoil_out,paste(dfoil_order,collapse=","))
+            
+        }    
+        
+    }
+    write(dfoil_out,id)
+}    
+
+
+
 dfoil_select(Anisoptera,"Anisoptera_dfoil")
 dfoil_select(Zygoptera,"Zygoptera_dfoil")
-dfoil_select_az(Anisozygoptera,"Anisozygoptera_dfoil")
+dfoil_select_az(tt,"Anisozygoptera_dfoil")
 
 ################################################################ RUN DFOIL ######################################################################## 
 
@@ -70,9 +103,9 @@ Anisoptera=c(extract.clade(tt,136)$tip.label)
 Lestoidea=c(extract.clade(tt,131)$tip.label)
 Calopterygoidea=extract.clade(tt,91)$tip.label
 Coenagrionoidea=extract.clade(tt,109)$tip.label
-Aeshnoidea=c(extract.clade(tt,137)$tip.label,extract.clade(tt,144)$tip.label)
 Cordulegastroidea=extract.clade(tt,151)$tip.label
 Libelluloidea=extract.clade(tt,156)$tip.label
+Platystictidae="Protosticta_beaumonti"
 
 Aeshnidae=extract.clade(tt,137)$tip.label
 Gomphidae_Petaluridae=extract.clade(tt,144)$tip.label
@@ -84,25 +117,84 @@ total=read.csv("/Users/Anton/Downloads/dfoil_results.txt",stringsAsFactors=FALSE
 names(total)=names_v
 total=total[total$T12<total$T34,]
 
+
+
+total$P1subo=ifelse(total$P1 %in% Zygoptera,"Zygoptera",
+                    ifelse(total$P1 %in% Anisoptera,"Anisoptera","Anisozygoptera"))
+
+total$P2subo=ifelse(total$P2 %in% Zygoptera,"Zygoptera",
+                    ifelse(total$P2 %in% Anisoptera,"Anisoptera","Anisozygoptera"))
+
+
+total$P3subo=ifelse(total$P3 %in% Zygoptera,"Zygoptera",
+                    ifelse(total$P3 %in% Anisoptera,"Anisoptera","Anisozygoptera"))
+
+total$P4subo=ifelse(total$P4 %in% Zygoptera,"Zygoptera",
+                    ifelse(total$P4 %in% Anisoptera,"Anisoptera","Anisozygoptera"))
+
+
+total$P1sub=ifelse(total$P1 %in% Lestoidea,"Lestoidea",
+                   ifelse(total$P1 %in% Coenagrionoidea,"Coenagrionoidea",
+                   ifelse(total$P1 %in% Calopterygoidea,"Calopterygoidea",
+                   ifelse(total$P1 %in% Platystictidae,"Platystictidae",
+                   ifelse(total$P1 %in% Aeshnidae,"Aeshnidae",
+                   ifelse(total$P1 %in% Gomphidae_Petaluridae,"Gomphidae+Petaluridae",
+                   ifelse(total$P1 %in% Cordulegastroidea,"Cordulegastroidea",
+                   ifelse(total$P1 %in% Libelluloidea,"Libelluloidea",
+                   ifelse(total$P1 %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))
+
+total$P3sub=ifelse(total$P3 %in% Lestoidea,"Lestoidea",
+                   ifelse(total$P3 %in% Coenagrionoidea,"Coenagrionoidea",
+                   ifelse(total$P3 %in% Calopterygoidea,"Calopterygoidea",
+                   ifelse(total$P3 %in% Platystictidae,"Platystictidae",
+                   ifelse(total$P3 %in% Aeshnidae,"Aeshnidae",
+                   ifelse(total$P3 %in% Gomphidae_Petaluridae,"Gomphidae+Petaluridae",
+                   ifelse(total$P3 %in% Cordulegastroidea,"Cordulegastroidea",
+                   ifelse(total$P3 %in% Libelluloidea,"Libelluloidea",
+                   ifelse(total$P3 %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))
+
+
+total$P2sub=ifelse(total$P2 %in% Lestoidea,"Lestoidea",
+                   ifelse(total$P2 %in% Coenagrionoidea,"Coenagrionoidea",
+                   ifelse(total$P2 %in% Calopterygoidea,"Calopterygoidea",
+                   ifelse(total$P2 %in% Platystictidae,"Platystictidae",
+                   ifelse(total$P2 %in% Aeshnidae,"Aeshnidae",
+                   ifelse(total$P2 %in% Gomphidae_Petaluridae,"Gomphidae+Petaluridae",
+                   ifelse(total$P2 %in% Cordulegastroidea,"Cordulegastroidea",
+                   ifelse(total$P2 %in% Libelluloidea,"Libelluloidea",
+                   ifelse(total$P2 %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))
+
+
+total$P4sub=ifelse(total$P4 %in% Lestoidea,"Lestoidea",
+                   ifelse(total$P4 %in% Coenagrionoidea,"Coenagrionoidea",
+                   ifelse(total$P4 %in% Calopterygoidea,"Calopterygoidea",
+                   ifelse(total$P4 %in% Platystictidae,"Platystictidae",
+                   ifelse(total$P4 %in% Aeshnidae,"Aeshnidae",
+                   ifelse(total$P4 %in% Gomphidae_Petaluridae,"Gomphidae+Petaluridae",
+                   ifelse(total$P4 %in% Cordulegastroidea,"Cordulegastroidea",
+                   ifelse(total$P4 %in% Libelluloidea,"Libelluloidea",
+                   ifelse(total$P4 %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))
+
+
+#nodups=total$P1sub!=total$P3sub & total$P1sub!=total$P4sub & total$P2sub!=total$P3sub & total$P2sub!=total$P4sub
+
+
 total$Order="Odonata"
-total$Suborder=ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Zygoptera),1,all),"Zygoptera",
-                      ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Anisoptera),1,all),"Anisoptera",
-                      ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Anisozygoptera),1,any),"Anisozygoptera","RANDOM")))
+
+total$Suborder=ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Zygoptera),1,all) ,"Zygoptera",
+                      ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Anisoptera),1,all) ,"Anisoptera",
+                      ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Anisozygoptera),1,any) ,"Anisozygoptera","RANDOM")))
 
 
 total$Superfamily=ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Lestoidea),1,all),"Lestoidea",
                        ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Calopterygoidea),1,all),"Calopterygoidea",
                        ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Coenagrionoidea),1,all),"Coenagrionoidea",
-                       ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Aeshnoidea),1,all),"Aeshnoidea",
                        ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Cordulegastroidea),1,all),"Cordulegastroidea",
-                       ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Libelluloidea),1,all),"Libelluloidea","RANDOM"))))))
+                       ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Libelluloidea),1,all),"Libelluloidea","RANDOM")))))
 
 total$focalclade=ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Aeshnidae),1,all),"Aeshnidae",
                       ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Gomphidae_Petaluridae),1,all),"Gomphidae+Petaluridae",
                       ifelse(apply(apply(total[,c("P1","P2","P3","P4")],2,"%in%",Libellulidae),1,all),"Libellulidae","RANDOM")))
-
-
-
 
 
 
@@ -131,7 +223,7 @@ total_p=total_p[total_p$taxon!="RANDOM",]
 total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
 total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
 
-g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=10),legend.position=c(0.5,1.22) ,legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("chocolate1","gold","darkslateblue"),name="")+ggtitle("B")
+g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=10),legend.position=c(0.5,1.22) ,legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("wheat","grey50"),name="")+ggtitle("B")
 
 
 

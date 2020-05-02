@@ -79,7 +79,6 @@ Coenagrionoidea=tt[20:42]
 Cordulegastroidea=tt[64:69]
 Libelluloidea=tt[70:83]
 Platystictidae=tt[43]
-
 Aeshnidae=tt[50:56]
 Gomphidae_Petaluridae=tt[57:63]
 Libellulidae=tt[75:83]
@@ -102,10 +101,10 @@ total$P1subo=ifelse(total$P1 %in% Zygoptera,"Zygoptera",
                     ifelse(total$P1 %in% Anisoptera,"Anisoptera","Anisozygoptera"))
 
 total$Hybridsubo=ifelse(total$Hybrid %in% Zygoptera,"Zygoptera",
-                    ifelse(total$P2 %in% Anisoptera,"Anisoptera","Anisozygoptera"))
+                    ifelse(total$Hybrid %in% Anisoptera,"Anisoptera","Anisozygoptera"))
 
 total$P2subo=ifelse(total$P2 %in% Zygoptera,"Zygoptera",
-                    ifelse(total$Hybrid %in% Anisoptera,"Anisoptera","Anisozygoptera"))
+                    ifelse(total$P2 %in% Anisoptera,"Anisoptera","Anisozygoptera"))
     
 
 total$P1sub=ifelse(total$P1 %in% Lestoidea,"Lestoidea",
@@ -144,7 +143,11 @@ total$P2sub=ifelse(total$P2 %in% Lestoidea,"Lestoidea",
 nodups=!apply(t(apply(total[,c("P1sub","Hybridsub","P2sub")],1,duplicated)),1,any)
 
 
+#total$Order=ifelse((total$P2subo=="Zygoptera" & total$Hybridsubo=="Zygoptera" &  (total$P1subo=="Anisoptera" | total$P1subo=="Anisozygoptera" )) | ( (total$P2subo=="Anisoptera" | total$P2subo=="Anisozygoptera") & (total$Hybridsubo=="Anisoptera" total$P1subo=="Anisozygoptera") &  total$P1subo=="Zygoptera"),"Odonata","RANDOM")
+#total$Total="All"
+
 total$Order="Odonata"
+
 
 total$Suborder=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Zygoptera),1,all) & nodups,"Zygoptera",
                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Anisoptera),1,all) & nodups,"Anisoptera",
