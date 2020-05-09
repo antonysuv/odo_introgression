@@ -204,17 +204,17 @@ total$introgressionid=ifelse(total$introgression=="none","None",
 
 
 
-total_ord=melt(total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat","Order","Superfamily","Suborder","focalclade")],measure.vars = c("DFO_stat","DIL_stat","DFI_stat","DOL_stat"),value.name="stat")
+total_ord=melt(total[total$introgressionid!="None",c("DFO_stat","DIL_stat","DFI_stat","DOL_stat","Order","Superfamily","Suborder","focalclade")],measure.vars = c("DFO_stat","DIL_stat","DFI_stat","DOL_stat"),value.name="stat")
 total_ord=melt(total_ord,id=c("variable","stat"),value.name="taxon",variable.name="class")
 total_ord$class=replace(as.character(total_ord$class),as.character(total_ord$class)=="focalclade","Focal clade")
 total_ord$variable_f=factor(total_ord$class, levels=c("Order","Suborder","Superfamily","Focal clade"))
 total_ord$variable=ifelse(total_ord$variable=="DFO_stat","D[FO]",ifelse(total_ord$variable=="DIL_stat","D[IL]",ifelse(total_ord$variable=="DFI_stat","D[FI]","D[OL]")))
 
-
+odo_null=data.frame(variable=rep(c("D[FO]","D[FI]","D[OL]","D[IL]"),3),stat=NA,class=rep(c("Superfamily","Focal clade"),times=c(4,8)),taxon=rep(c("Lestoidea","Aeshnidae","Gomphidae+Petaluridae"),times=c(4,4,4)),variable_f=rep(c("Superfamily","Focal clade"),times=c(4,8)))
+total_ord=rbind(total_ord,odo_null)
 
 ###############Plotting 
-#Remove Lestoidea: only 2 cases => cant estimate violin plots
-g1=ggplot(total_ord[total_ord$taxon!="RANDOM",], aes(x=taxon, y=stat,fill=variable))+geom_violin(lwd=0.1)+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="red",position=position_dodge(0.9))+geom_boxplot(width=0.01,outlier.size=-1,position=position_dodge(0.9))+theme(axis.text.x = element_text(size = 8,angle=10))+ylab("Value")+xlab("")+scale_fill_manual(name="",values=c("black","darkgrey","grey90","white"),labels=expression(D[FI],D[FO],D[IL],D[OL]))+theme(legend.position=c(0.5,1.22),legend.direction="horizontal",legend.background = element_blank())+ggtitle("A") 
+g1=ggplot(total_ord[total_ord$taxon!="RANDOM",], aes(x=taxon, y=stat,fill=variable))+geom_violin(lwd=0.1,bw=0.09)+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="red",position=position_dodge(0.9))+geom_boxplot(width=0.01,outlier.size=-1,position=position_dodge(0.9))+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1))+ylab("Value")+xlab("")+scale_fill_manual(name="",values=c("black","darkgrey","grey90","white"),labels=expression(D[FI],D[FO],D[IL],D[OL]))+theme(legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ggtitle("A") 
                         
 
 
@@ -223,40 +223,37 @@ total_p=total_p[total_p$taxon!="RANDOM",]
 total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
 total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
 
-g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=10),legend.position=c(0.5,1.22) ,legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("wheat","grey50"),name="")+ggtitle("B")
+g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5),size=3)+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1),legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("rosybrown2","wheat","grey50"),name="")+ggtitle("B")
 
 
 
 
 
 #tSNE
-total_dr=total[,c(8:23)]/apply(total[,c(8:23)],1,sum)
+total_dr=total[total$introgression!="none",c(8:23)]/apply(total[total$introgression!="none",c(8:23)],1,sum)
 tsne_out=Rtsne(total_dr)
-
+sunset=c("#364B9A" ,"#4A7BB7", "#6EA6CD", "#98CAE1" ,"#C2E4EF" ,"#EAECCC", "#FEDA8B" ,"#FDB366", "#F67E4B", "#DD3D2D", "#A50026")
 #Main dr figure
 dat1=data.frame(tsne_out$Y)
 names(dat1)=c("tSNE1","tSNE2")
-introg_d=cbind(dat1,introgressionid=total[,c("introgressionid")])
+introg_d=cbind(dat1,introgressionid=total[total$introgression!="none",c("introgressionid")])
 #introg_d=introg_d[order(introg_d$introgressionid,decreasing = T),]
-dat1=cbind(dat1,total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat")])
+dat1=cbind(dat1,total[total$introgression!="none",c("DFO_stat","DIL_stat","DFI_stat","DOL_stat")])
 dat1=melt(dat1,id.vars=c("tSNE1","tSNE2"))
 dat1$variable=ifelse(dat1$variable=="DFO_stat","D[FO]",ifelse(dat1$variable=="DIL_stat","D[IL]",ifelse(dat1$variable=="DFI_stat","D[FI]","D[OL]")))
 
 
-
-
-t1=ggplot(introg_d) + geom_point(aes(tSNE1, tSNE2, color = introgressionid),size=0.2)+ scale_color_manual(values=c("chocolate1","gold","darkslateblue"),name="")+theme_classic()+ guides(colour = guide_legend(override.aes = list(size=3)))+ theme(legend.position=c(0.6,1.1),legend.background = element_blank(),legend.direction="horizontal")+ggtitle("C")
-t2=ggplot(dat1[dat1$value>-0.5 & dat1$value<0.5,]) + geom_point(aes(tSNE1, tSNE2, color = value),size=0.01)+facet_wrap(~variable,nrow = 2,labeller=label_parsed)+scale_color_gradientn(colors = viridis(100),name="")+theme_classic()+ggtitle("D")+theme(legend.position=c(1.2,0.5), legend.direction="vertical",legend.background = element_blank(),strip.background = element_rect(colour = "white", fill = "white"))
+t1=ggplot(dat1[dat1$value>-0.5 & dat1$value<0.5,]) + geom_point(aes(tSNE1, tSNE2, color = value),size=0.3,stroke=0)+facet_wrap(~variable,nrow = 1,labeller=label_parsed)+scale_color_gradientn(colors = sunset,name="",guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+ggtitle("C")+theme(legend.position=c(0.5,1.1) ,legend.direction="horizontal",legend.background = element_blank(),strip.background = element_rect(colour = "white", fill = "white"))
 
 
 
 lay = rbind(c(1,1,1,1,1,1),
              c(2,2,2,2,2,2),
-           c(3,3,NA,4,4,NA))
+           c(3,3,3,3,3,3))
 
 
-quartz(width=8.5,height=9)
-grid.arrange(g1,g2,t1,t2,nrow=3,layout_matrix = lay)
+quartz(width=7,height=7.2) 
+grid.arrange(g1,g2,t1,nrow=3,layout_matrix = lay)
 quartz.save("dfoil_distribution.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
 quartz.save("dfoil_distribution.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
 
@@ -269,11 +266,33 @@ quartz.save("dfoil_distribution.png", type = "png",antialias=F,bg="white",dpi=40
 
 #STATS for Focal clades 
 
-#Epiophlebia 
-total[total$introgressionid!="None" & total$Suborder=="Anisozygoptera",]
-#P2=>P3 P3=Epiophlebia P2 Indolestes_peregrinus Perissolestes_remotus  Synlestes_weyersii:  6 ssignificant tests 
+total_Dsig=total[total$introgression!="none",]
 
-
+get_t=function(m,stats)
+{
+    m_out=c()
+    for(i in c("Order","Suborder","Superfamily","focalclade"))
+    {
+       
+        for (cl in unique(m[,i]))
+        {
+            
+            my_t_two=t.test(m[m[,i]==cl,stats],mu=0)$p.value
+            my_t_greater=t.test(m[m[,i]==cl,stats],mu=0,alternative = "greater")$p.value
+            my_t_less=t.test(m[m[,i]==cl,stats],mu=0,alternative = "less")$p.value
+            
+            m_out=rbind(m_out,c(i,cl,my_t_two,my_t_greater,my_t_less))
+        }
+            
+    }
+    m_out=as.data.frame(m_out)
+    names(m_out)=c("rank","taxon","p_ttest_two","p_ttest_greater","p_ttest_less")
+    m_out$psig_two=as.numeric(as.vector(m_out$p_ttest_two))<0.05
+    m_out$psig_greater=as.numeric(as.vector(m_out$p_ttest_greater))<0.05
+    m_out$psig_less=as.numeric(as.vector(m_out$p_ttest_less))<0.05
+    return(m_out[m_out$taxon!="RANDOM",])
+        
+}
 
 
 

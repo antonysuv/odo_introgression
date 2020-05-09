@@ -230,28 +230,8 @@ quartz.save("hyde_distribution.png", type = "png",antialias=F,bg="white",dpi=400
 
 #Comparisons
 #D means
-
-
-
-
-
-
-
-
-
 total_Dsig=total[total$PvalueD<0.05,]
 total_Gsig=total[total$Pvalue<10^-6,]
-
-
-
-
-
-
-
-
-
-
-
 
 get_wilx=function(m,stats)
 {
