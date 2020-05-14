@@ -204,7 +204,7 @@ total$introgressionid=ifelse(total$introgression=="none","None",
 
 
 
-total_ord=melt(total[total$introgressionid!="None",c("DFO_stat","DIL_stat","DFI_stat","DOL_stat","Order","Superfamily","Suborder","focalclade")],measure.vars = c("DFO_stat","DIL_stat","DFI_stat","DOL_stat"),value.name="stat")
+total_ord=melt(total[,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat","Order","Superfamily","Suborder","focalclade")],measure.vars = c("DFO_stat","DIL_stat","DFI_stat","DOL_stat"),value.name="stat")
 total_ord=melt(total_ord,id=c("variable","stat"),value.name="taxon",variable.name="class")
 total_ord$class=replace(as.character(total_ord$class),as.character(total_ord$class)=="focalclade","Focal clade")
 total_ord$variable_f=factor(total_ord$class, levels=c("Order","Suborder","Superfamily","Focal clade"))
@@ -243,7 +243,7 @@ dat1=melt(dat1,id.vars=c("tSNE1","tSNE2"))
 dat1$variable=ifelse(dat1$variable=="DFO_stat","D[FO]",ifelse(dat1$variable=="DIL_stat","D[IL]",ifelse(dat1$variable=="DFI_stat","D[FI]","D[OL]")))
 
 
-t1=ggplot(dat1[dat1$value>-0.5 & dat1$value<0.5,]) + geom_point(aes(tSNE1, tSNE2, color = value),size=0.3,stroke=0)+facet_wrap(~variable,nrow = 1,labeller=label_parsed)+scale_color_gradientn(colors = sunset,name="",guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+ggtitle("C")+theme(legend.position=c(0.5,1.1) ,legend.direction="horizontal",legend.background = element_blank(),strip.background = element_rect(colour = "white", fill = "white"))
+t1=ggplot(dat1[dat1$value>-0.5 & dat1$value<0.5,]) + geom_point(aes(tSNE1, tSNE2, color = value),size=0.4,stroke=0)+facet_wrap(~variable,nrow = 1,labeller=label_parsed)+scale_color_gradientn(colors = sunset,name="",guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+ggtitle("C")+theme(legend.position=c(0.5,1.1) ,legend.direction="horizontal",legend.background = element_blank(),strip.background = element_rect(colour = "white", fill = "white"))
 
 
 
