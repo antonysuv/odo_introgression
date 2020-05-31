@@ -267,8 +267,8 @@ total_max$Q=0
 total=rbind(total_min,total_max)
 total=total[complete.cases(total), ] 
 total$BICdiff = total$BIC2-total$BIC1
-total$Qsig = total$Q<0.05
-total$Qtrisig = total$Qtri<0.05
+total$Qsig = total$Q<10^-6
+total$Qtrisig = total$Qtri<10^-6
 total$sig=total$BICdiff < -30
 total$Order="Odonata"
 
@@ -298,9 +298,10 @@ total$focalclade=ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Aeshnidae
                       ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Gomphidae_Petaluridae),1,all),"Gomphidae+Petaluridae",
                       ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Libellulidae),1,all),"Libellulidae","RANDOM")))
 
+total$Order=ifelse(total$Suborder!="RANDOM","Odonata","RANDOM")
 
-total$type=ifelse(total$common==TRUE & total$sig==TRUE ,"Concordant",ifelse(total$sig==FALSE & total$common==FALSE,"ILS","Introgression+ILS"))
-total$Qtype=ifelse(total$common==TRUE & total$Qtrisig==TRUE,"Concordant",ifelse(total$common==TRUE & total$Qtrisig==FALSE,"Extreme ILS",ifelse(total$Qsig==FALSE & total$common==FALSE ,"ILS","Introgression+ILS")))
+total$type=ifelse(total$common==TRUE & total$sig==TRUE ,"Concordant",ifelse(total$sig==TRUE & total$common==FALSE,"Introgression+ILS",ifelse(total$common==TRUE & total$sig==FALSE,"Extreme ILS","ILS")))
+total$Qtype=ifelse(total$common==TRUE & total$Qtrisig==TRUE,"Concordant",ifelse(total$common==TRUE & total$Qtrisig==FALSE,"Extreme ILS",ifelse(total$Qsig==TRUE & total$common==FALSE ,"Introgression+ILS","ILS")))
 
 
 
@@ -310,7 +311,7 @@ total_mixprop$variable=replace(as.character(total_mixprop$variable),as.character
 total_mixprop$variable_f=factor(total_mixprop$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
 
 
-g1=ggplot(total_mixprop, aes(x=taxon, y=mixprop2))+geom_violin(fill="rosybrown2")+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1))+ylab(expression(pi[2]))+xlab("")+ggtitle("A")
+g1=ggplot(total_mixprop, aes(x=taxon, y=log(mixprop2)))+geom_violin(fill="rosybrown2")+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1))+ylab(expression(log(pi[2])))+xlab("")+ggtitle("A")
 
 #total_mixprop=melt(total[total$Qtype=="Introgression+ILS" ,c("mixprop2","Order","Suborder","Superfamily","focalclade")],value.name="taxon",id=c("mixprop2"))
 #total_mixprop=total_mixprop[total_mixprop$taxon!="RANDOM",]
@@ -327,7 +328,7 @@ total_p=total_p[total_p$taxon!="RANDOM",]
 total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
 total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
 
-g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=type))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5),size=3)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("wheat","grey50","rosybrown2"),name="")+ggtitle("B")
+g2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=type))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5),size=3)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("wheat","gold","grey50","rosybrown2"),name="")+ggtitle("B")
 
 total_p=melt(total[ ,c("Qtype","Order","Suborder","Superfamily","focalclade")],id="Qtype",value.name="taxon")
 total_p=total_p[total_p$taxon!="RANDOM",]
@@ -345,19 +346,44 @@ grid.arrange(g1,g2,gq2,nrow=3)
 quartz.save("quibl_distribution.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
 quartz.save("quibl_distribution.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
 
-mutate(the_rank  = rank(-value, ties.method = "random"))
+
 
 
 #STATS for Focal clades 
+total_intro=total[total$type=="Introgression+ILS" & total$Order!="RANDOM",]
+
+get_wilx=function(m,stats)
+{
+    m_out=c()
+    for(i in c("Order","Suborder","Superfamily","focalclade"))
+    {
+       
+        for (cl in unique(m[,i]))
+        {
+            
+            my_mean=mean(m[m[,i]==cl,stats])
+            my_pg=wilcox.test(m[m[,i]==cl,stats],m[,stats],alternative="greater")$p.value
+            my_pt=wilcox.test(m[m[,i]==cl,stats],m[,stats],alternative="two.sided")$p.value
+            my_pl=wilcox.test(m[m[,i]==cl,stats],m[,stats],alternative="less")$p.value
+            my_t=t.test(m[m[,i]==cl,stats],mu=0.5)$p.value
+            m_out=rbind(m_out,c(i,cl,my_mean,my_pg,my_pt,my_pl,my_t))
+        }
+            
+    }
+    m_out=as.data.frame(m_out)
+    names(m_out)=c("rank","taxon","average","p_greater","p_two","p_less","p_ttest")
+    
+    return(m_out)
+        
+}
 
 
+kk=table(total[total$Suborder=="Anisozygoptera" & total$type=="Introgression+ILS","outgroup"])
+#Introgression with Zygoptera
+sum(kk[names(kk) %in% Anisoptera])
+#Introgression with Anisoptera
+sum(kk[names(kk) %in% Zygoptera])
 
-
-
-Epio=total[apply(total[,c("P1","P2","P3")]=="Epiophlebia_superstes",1,any) & total$outgroup!="Epiophlebia_superstes",]
-Epio$ipair=get_intropair(Epio,"Epiophlebia_superstes")
-
-Epio_sig=Epio[Epio$sig==TRUE & Epio$common==FALSE,]
 
 
     
