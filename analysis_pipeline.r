@@ -7,6 +7,7 @@ library('gridExtra')
 library('ggplot2')
 library('pals')
 library('reshape2')
+library("svMisc")
 
 
 ################################################################ HyDe ######################################################################## 
@@ -156,10 +157,12 @@ quartz.save("Fig3.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12
 quartz.save("Fig3.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
 
 #Introgressing pair
-total$i1=unlist(lapply(lapply(strsplit(as.vector(total$P1),"_"),"[",c(2,3)),paste,collapse="_"))
-total$i2=unlist(lapply(lapply(strsplit(as.vector(total$Hybrid),"_"),"[",c(2,3)),paste,collapse="_"))
 
-total_hyde=total
+introg=data.frame(t(apply(cbind(unlist(lapply(lapply(strsplit(as.vector(total$P1),"_"),"[",c(2,3)),paste,collapse="_")),unlist(lapply(lapply(strsplit(as.vector(total$Hybrid),"_"),"[",c(2,3)),paste,collapse="_"))),1,sort)))
+names(introg)=c("i1","i2")
+
+
+total_hyde=cbind(total,introg)
 
 ################################################################ Dfoil ########################################################################
 
@@ -310,7 +313,7 @@ get_intropair_dfoil=function(m)
         progress(i,nrow(m))
         if(m[i,"introgression"]!="none" & m[i,"introgression"]!="123" & m[i,"introgression"]!="124")
         {
-            pair=as.character(unlist(m[i,c("P1","P2","P3","P4")][sort(as.numeric(unlist(strsplit(as.character(m[i,"introgression"]),split=""))))]))
+            pair=sort(as.character(unlist(m[i,c("P1","P2","P3","P4")][sort(as.numeric(unlist(strsplit(as.character(m[i,"introgression"]),split=""))))])))
             pair_v=rbind(pair_v,pair)
         }else{
             pair=c("none","none")
@@ -360,54 +363,35 @@ total$P3=P3
 
 
 #Chisq test for extreme ILS
-chiPtri=c()
-for (trip in unique(as.character(total$triplet)))
-{
-    p_v=chisq.test(subset(total,triplet==trip)$count+1)$p.value
-    chiPtri=c(chiPtri,p_v)
-}    
-chiPtri=p.adjust(chiPtri,method="fdr")
-total$Qtri=rep(chiPtri,each=3)
-
-#Identify largest triplet count 
-total$common=FALSE
-for (trip in unique(as.character(total$triplet)))
-{
-  maxVal=max(subset(total,triplet==trip)$count)
-  # Handle ties
-  if(nrow(total[which(total$triplet==trip & total$count==maxVal),])>1)
-  {
-     total[which(total$triplet==trip & total$count==maxVal),][1,]$common=TRUE 
-  }else{    
-    total[which(total$triplet==trip & total$count==maxVal),]$common=TRUE
-  }    
-}
-
-
-total_min=total[total$common==F,]
-total_max=total[total$common==T,]
-
-#Chisq test for Introgression vs ILS
-chiP=c()
+pvals=c()
+common=c()
 i=0
-for (trip in unique(as.character(total_min$triplet)))
+for (trip in unique(as.character(total$triplet)))
 {
     i=i+1
-    progress(i,length(unique(as.character(total_min$triplet))))
-    p_v=chisq.test(subset(total_min,triplet==trip)$count+1)$p.value
-    chiP=c(chiP,p_v)
-}    
-chiP=p.adjust(chiP,method="fdr")
-total_min$Q=rep(chiP,each=2)
-total_max$Q=0
-total=rbind(total_min,total_max)
-total=total[complete.cases(total), ] 
-total$BICdiff = total$BIC2-total$BIC1
-total$Qsig = total$Q<10^-6
-total$Qtrisig = total$Qtri<10^-6
-total$sig=total$BICdiff < -30
-total$Order="Odonata"
+    progress(i,length(unique(as.character(total$triplet))))
+    gcount=total[total$triplet==trip,"count"]+1
+    p_v_all=chisq.test(gcount)$p.value
+    pos=rank(gcount,ties.method ="random")
+    cl=c("discord2","discord1","common")
+    common=c(common,cl[pos])
+    p_v_d=chisq.test(gcount[pos!=3])$p.value
+    pvals=c(pvals,c(NA,p_v_d,p_v_all)[pos])
+}
 
+#FDR correction 
+total$common=common
+total$Q=pvals
+total[total$common=="common","Q"]=p.adjust(total[total$common=="common","Q"],method="fdr")
+total[total$common=="discord1","Q"]=p.adjust(total[total$common=="discord1","Q"],method="fdr")
+
+
+
+#delta BIC
+total$BICdiff = total$BIC2-total$BIC1
+total[is.na(total$type),"BICdiff"]=0
+#Taxa assignment
+total$Order="Odonata"
 
 total$P1subo=ifelse(total$P1 %in% Zygoptera,"Zygoptera",
                     ifelse(total$P1 %in% Anisoptera,"Anisoptera","Anisozygoptera"))
@@ -436,8 +420,19 @@ total$focalclade=ifelse(apply(apply(total[,c("P1","P2","P3")],2,"%in%",Aeshnidae
 
 total$Order=ifelse(total$Suborder!="RANDOM","Odonata","RANDOM")
 
-total$type=ifelse(total$common==TRUE & total$sig==TRUE ,"Concordant",ifelse(total$sig==TRUE & total$common==FALSE,"Introgression+ILS",ifelse(total$common==TRUE & total$sig==FALSE,"Extreme ILS","ILS")))
-total$Qtype=ifelse(total$common==TRUE & total$Qtrisig==TRUE,"Concordant",ifelse(total$common==TRUE & total$Qtrisig==FALSE,"Extreme ILS",ifelse(total$Qsig==TRUE & total$common==FALSE ,"Introgression+ILS","ILS")))
+total$type=ifelse(total$common=="common" & total$BICdiff< -30 ,"Concordant",ifelse(total$BICdiff< -30 & total$common!="common","Introgression+ILS",ifelse(total$common=="common" & total$BICdiff> -30,"Extreme ILS","ILS")))
+
+
+total$Qtype=ifelse(total$common=="common" & total$Q>10^-6,"Extreme ILS",ifelse(total$common=="discord1" & total$Q>10^-6,"ILS",ifelse(total$common=="discord1" & total$Q<10^-6,"Introgression+ILS","none")))
+for (trip in unique(as.character(total$triplet)))
+{
+    if(total[total$triplet==trip & total$common=="common","Qtype"]=="Extreme ILS")
+    {
+        total[total$triplet==trip & total$common=="discord1","Qtype"]="none"     
+    }    
+}
+
+
 
 #Mixprop distributions 
 total_mixprop=melt(total[total$type=="Introgression+ILS" ,c("mixprop2","Order","Suborder","Superfamily","focalclade")],value.name="taxon",id=c("mixprop2"))
@@ -460,11 +455,11 @@ m2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=type))+geom_bar(
 
 #Chi-square proportions
 total_p=melt(total[ ,c("Qtype","Order","Suborder","Superfamily","focalclade")],id="Qtype",value.name="taxon")
-total_p=total_p[total_p$taxon!="RANDOM",]
+total_p=total_p[total_p$taxon!="RANDOM" & total_p$Qtype!="none",]
 total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
 total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
 
-mq2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=Qtype))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5),size=3)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("wheat","gold","grey50","rosybrown2"),name="")
+mq2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=Qtype))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5),size=3)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("gold","grey50","wheat"),name="")+ggtitle(" ")
 
 
 
@@ -478,3 +473,19 @@ quartz(width=7,height=4.8)
 grid.arrange(m1,m2,nrow=2)
 quartz.save("quibl_mixprop.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
 quartz.save("quibl_mixprop.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
+#Introgressing pair
+get_intropair_quibl=function(m)
+{
+    pair_v=c()
+    for (i in 1:nrow(m))        
+    {
+        pair_intro=sort(as.character(total[i,c("P1","P2","P3")][!total[i,c("P1","P2","P3")] %in% total[i,"outgroup"]]))
+        pair_v=rbind(pair_v,pair_intro)
+    }
+    pair_v=data.frame(pair_v)
+    names(pair_v)=c("i1","i2")
+    return(pair_v)
+}    
+
+total_quibl=cbind(total,get_intropair_quibl(total))    
