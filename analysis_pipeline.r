@@ -8,9 +8,18 @@ library('ggplot2')
 library('pals')
 library('reshape2')
 library("svMisc")
+library("VennDiagram")
 
 
 ################################################################ HyDe ######################################################################## 
+get_density = function(x, y, ...) 
+{
+  dens = MASS::kde2d(x, y, ...)
+  ix = findInterval(x, dens$x)
+  iy = findInterval(y, dens$y)
+  ii = cbind(ix, iy)
+  return(dens$z[ii])
+}
 
 tt=as.character(read.table("taxa_map.txt")$V2)
 Zygoptera=tt[1:48]
@@ -80,14 +89,13 @@ total$P2sub=ifelse(total$P2 %in% Lestoidea,"Lestoidea",
                    ifelse(total$P2 %in% Libelluloidea,"Libelluloidea",
                    ifelse(total$P2 %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))
 
-
-
+#Ephiophlebia only between Zygoptera and Anisoptera 
 nodups=!apply(t(apply(total[,c("P1sub","Hybridsub","P2sub")],1,duplicated)),1,any)
 
 total$Order="Odonata"
 
-total$Suborder=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Zygoptera),1,all) & nodups,"Zygoptera",
-                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Anisoptera),1,all) & nodups,"Anisoptera",
+total$Suborder=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Zygoptera),1,all) ,"Zygoptera",
+                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Anisoptera),1,all),"Anisoptera",
                      ifelse(total$Hybrid==Anisozygoptera & nodups & total$P1subo!=total$P2subo,"Anisozygoptera","RANDOM")))
 
 total$Superfamily=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Lestoidea),1,all),"Lestoidea",
@@ -160,9 +168,11 @@ quartz.save("Fig3.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12
 
 introg=data.frame(t(apply(cbind(unlist(lapply(lapply(strsplit(as.vector(total$P1),"_"),"[",c(2,3)),paste,collapse="_")),unlist(lapply(lapply(strsplit(as.vector(total$Hybrid),"_"),"[",c(2,3)),paste,collapse="_"))),1,sort)))
 names(introg)=c("i1","i2")
+i1i2=as.vector(apply(introg,1,paste,collapse="_"))
 
 
 total_hyde=cbind(total,introg)
+total_hyde$i1i2=i1i2
 
 ################################################################ Dfoil ########################################################################
 
@@ -327,7 +337,9 @@ get_intropair_dfoil=function(m)
 }
 
 intropairs=get_intropair_dfoil(total)
+i1i2=as.vector(apply(intropairs,1,paste,collapse="_"))
 total_dfoil=cbind(total,intropairs)
+total_dfoil$i1i2=i1i2
 
 ################################################################ QuIBL/Chi-square ########################################################################
 
@@ -439,6 +451,7 @@ total_mixprop=melt(total[total$type=="Introgression+ILS" ,c("mixprop2","Order","
 total_mixprop=total_mixprop[total_mixprop$taxon!="RANDOM",]
 total_mixprop$variable=replace(as.character(total_mixprop$variable),as.character(total_mixprop$variable)=="focalclade","Focal clade")
 total_mixprop$variable_f=factor(total_mixprop$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+total_mixprop=total_mixprop[complete.cases(total_mixprop), ]
 
 ###############Plotting
 m1=ggplot(total_mixprop, aes(x=taxon, y=log(mixprop2)))+geom_violin(fill="rosybrown2")+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1))+ylab(expression(log(pi[2])))+xlab("")+ggtitle("A")
@@ -448,6 +461,7 @@ total_p=melt(total[ ,c("type","Order","Suborder","Superfamily","focalclade")],id
 total_p=total_p[total_p$taxon!="RANDOM",]
 total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
 total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+total_p=total_p[complete.cases(total_p), ]
 
 ###############Plotting
 m2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=type))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5),size=3)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("wheat","gold","grey50","rosybrown2"),name="")+ggtitle("B")
@@ -458,6 +472,7 @@ total_p=melt(total[ ,c("Qtype","Order","Suborder","Superfamily","focalclade")],i
 total_p=total_p[total_p$taxon!="RANDOM" & total_p$Qtype!="none",]
 total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
 total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+total_p=total_p[complete.cases(total_p), ]
 
 mq2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=Qtype))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5),size=3)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("gold","grey50","wheat"),name="")+ggtitle(" ")
 
@@ -488,4 +503,121 @@ get_intropair_quibl=function(m)
     return(pair_v)
 }    
 
-total_quibl=cbind(total,get_intropair_quibl(total))    
+intropairs=get_intropair_quibl(total)
+i1i2=as.vector(apply(intropairs,1,paste,collapse="_"))
+total_quibl=cbind(total,intropairs)    
+total_quibl$i1i2=i1i2
+
+
+
+################################################################ Analysis ##################################################################################
+############################################################################################################################################################
+############################################################################################################################################################
+
+################################################################ Overlap ###################################################################################
+
+#Odonata
+hyde_u=unique(total_hyde[total_hyde$introgressionid=="Introgression","i1i2"])
+dfoil_u=unique(total_dfoil[total_dfoil$introgressionid=="Inter-group" & total_dfoil$i1i2!="none_none" ,"i1i2"])
+quibl_u=unique(total_quibl[total_quibl$Qtype=="Introgression+ILS" ,"i1i2"])
+venn.diagram(x = list(quibl_u,dfoil_u,hyde_u),category.names = c("Chi-square" , "Dfoil","HyDe"),filename = "Odonatavenn.png",output=T,resolution =300)
+
+#Suborder
+for (i in unique(total_hyde$Suborder))
+{
+    hyde_u=unique(total_hyde[total_hyde$introgressionid=="Introgression" & total_hyde$Suborder==i,"i1i2"])
+    dfoil_u=unique(total_dfoil[total_dfoil$introgressionid=="Inter-group" & total_dfoil$i1i2!="none_none" & total_dfoil$Suborder==i,"i1i2"])
+    quibl_u=unique(total_quibl[total_quibl$Qtype=="Introgression+ILS" & total_quibl$Suborder==i ,"i1i2"])
+    venn.diagram(x = list(quibl_u,dfoil_u,hyde_u),category.names = c("Chi-square" , "Dfoil","HyDe"),filename = paste(i,"venn.png",sep=""),output=T,resolution =300)
+}    
+
+#Superfamilies
+for (i in unique(total_hyde$Superfamily))
+{
+    hyde_u=unique(total_hyde[total_hyde$introgressionid=="Introgression" & total_hyde$Superfamily==i,"i1i2"])
+    dfoil_u=unique(total_dfoil[total_dfoil$introgressionid=="Inter-group" & total_dfoil$i1i2!="none_none" & total_dfoil$Superfamily==i,"i1i2"])
+    quibl_u=unique(total_quibl[total_quibl$Qtype=="Introgression+ILS" & total_quibl$Superfamily==i ,"i1i2"])
+    venn.diagram(x = list(quibl_u,dfoil_u,hyde_u),category.names = c("Chi-square" , "Dfoil","HyDe"),filename = paste(i,"venn.png",sep=""),output=T,resolution =300)
+}    
+
+
+
+#Focal clades
+for (i in unique(total_hyde$focalclade))
+{
+    hyde_u=unique(total_hyde[total_hyde$introgressionid=="Introgression" & total_hyde$focalclade==i,"i1i2"])
+    dfoil_u=unique(total_dfoil[total_dfoil$introgressionid=="Inter-group" & total_dfoil$i1i2!="none_none" & total_dfoil$focalclade==i,"i1i2"])
+    quibl_u=unique(total_quibl[total_quibl$Qtype=="Introgression+ILS" & total_quibl$focalclade==i ,"i1i2"])
+    venn.diagram(x = list(quibl_u,dfoil_u,hyde_u),category.names = c("Chi-square" , "Dfoil","HyDe"),filename = paste(i,"venn.png",sep=""),output=T,resolution =300)
+}    
+
+
+################################################################ Statisitcal tests #############################################################################
+
+###HyDe tests
+#D for old vs young divergencies 
+
+nodupso=apply(t(apply(total[,c("P1subo","Hybridsubo","P2subo")],1,duplicated)),1,sum)==1
+AZ=total_hyde[nodupso & total_hyde$introgressionid=="Introgression","D"]
+mean(AZ)
+OTH=total_hyde[total_hyde$introgressionid=="Introgression" & (total_hyde$focalclade %in% c("Aeshnidae","Libellulidae") | total_hyde$Superfamily=="Coenagrionoidea"),"D"]
+mean(OTH)
+wilcox.test(AZ,OTH)
+
+#D and Gamma distribution comparisons 
+get_wilx_hyde=function(m,stats)
+{
+    m_out=c()
+    for(i in c("Suborder","Superfamily","focalclade"))
+    {
+       
+        for (cl in unique(m[,i]))
+        {
+            
+            my_mean=mean(m[m[,i]==cl,stats])
+            my_pt=wilcox.test(m[m[,i]==cl,stats],m[m[,i]!=cl,stats],alternative="two.sided")$p.value
+            m_out=rbind(m_out,c(i,cl,my_mean,my_pt))
+        }
+            
+    }
+    m_out=as.data.frame(m_out)
+    names(m_out)=c("rank","taxon","average","p_two")
+    m_out=m_out[m_out$taxon!="RANDOM",]
+    return(m_out)
+        
+}
+mean(total_hyde$D)
+get_wilx_hyde(total_hyde,"D")
+mean(total_hyde$Gamma)
+get_wilx_hyde(total_hyde,"Gamma")
+
+###Dfoil tests
+get_wilx_dfoil=function(m,stats)
+{
+    m_out=c()
+    for(i in c("Suborder","Superfamily","focalclade"))
+    {
+       
+        for (cl in unique(m[,i]))
+        {
+            
+            my_mean=mean(unlist(m[m[,i]==cl,stats]))
+            my_pt=wilcox.test(unlist(m[m[,i]==cl,stats]),unlist(m[m[,i]!=cl,stats]),alternative="two.sided")$p.value
+            my_t=t.test(m[m[,i]==cl,stats],mu=0)$p.value
+            m_out=rbind(m_out,c(i,cl,my_mean,my_pt,my_t))
+        }
+            
+    }
+    m_out=as.data.frame(m_out)
+    names(m_out)=c("rank","taxon","average","p_two","p_t")
+    m_out=m_out[m_out$taxon!="RANDOM",]
+    return(m_out)
+        
+}
+
+get_wilx_dfoil(total_dfoil,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat"))
+
+
+#Excess of introgression cases for Anisozygoptera
+fisher.test(matrix(c(16096,91648,5896,32456),ncol=2))
+ 
