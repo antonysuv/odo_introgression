@@ -52,19 +52,3 @@ quartz(width=8.21, height=10)
 all_genes_trim=genefordensitree(all_genes) #1475 phylogenetic trees
 densiTree(all_genes_trim,alpha = 0.009,scaleX = T,jitter = list(amount = 0.1, random=TRUE),consensus=rev(sporder),col="black",label.offset=0.01,cex=0.6,scale.bar = F)
 
-###Epio
-epioord=c("Lestoidea","RZ","Epiophlebiidae","Aeshnidae","RA","Outgroup")
-epio_genes=read.nexus("/Users/Anton/Downloads/epio_run_phylonet_genes_IntroRateMCMC.nex")
-epio_genes_trim=genefordensitree(epio_genes)
-densiTree(epio_genes_trim,alpha = 0.008,scaleX = T,jitter = list(amount = 0.1, random=TRUE),col="black",label.offset=0.01,cex=0.6,scale.bar = F,consensus=rev(epioord))
-
-
-
-epioord=c("Perissolestes_remotus","Synlestes_weyersii","Episynlestes_cristatus","Indolestes_peregrinus","Archilestes_grandis","Protosticta_beaumonti","Copera_marginipes","Ischnura_elegans","Epiophlebia_superstes","Telephlebia_godeffroyi","Austroaeschna_subapicalis","Gynacantha_tibiata","Anax_parthenope","Anax_walsinghami","Anax_junius","Aeshna_palmata","Phenes_raptor","Ladona_fulva")
-epio_genes=read.nexus("/Users/Anton/Downloads/epio_phylonet_genes_1ret.nex")
-epio_genes_trim=genefordensitree(epio_genes)
-quartz(width=7, height=7)
-densiTree(epio_genes_trim,alpha = 0.008,scaleX = T,jitter = list(amount = 0.1, random=TRUE),col="black",label.offset=0.01,cex=0.6,scale.bar = F,consensus=rev(epioord))
-quartz.save("Epio_cloud.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=1)
-
-(((Pantala_flavescens,Rhyothemis_variegata),(((Ladona_fulva,Orthetrum_albistylum),(Libellula_forensis,Libellula_saturata)),(Sympetrum_frequens,(Acisoma_variegatum,Erythrodiplax_connata)))),(Ephemera_danica,Isonychia_kiangsinensis));
