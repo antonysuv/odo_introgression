@@ -128,7 +128,9 @@ dat=total_ord[total_ord$PvalueD<0.05 & total_ord$D > 0 & total_ord$Pvalue<10^-6,
 dat$density = get_density(dat$Gamma, dat$D, n = 100)
 
 ###############Plotting
-a4=ggplot(dat,aes(Gamma, D, color = density)) + geom_point(size=0.4,stroke=0)+geom_smooth(method = "auto", size = 0.5,color="black")+scale_color_gradientn(colors = sunset[1:6],guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)),name="")+labs(x = expression(gamma),y="D")+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",legend.background = element_blank())+ggtitle("D")
+a4=ggplot(dat,aes(Gamma, D, color = density)) + geom_point(size=0.4,stroke=0)+geom_smooth(method = "auto", size = 0.5,color="black")+scale_color_gradientn(colors = sunset[1:6],guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)),name="")+labs(x = expression(gamma),y="D")+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",legend.background = element_blank())+ggtitle("C")
+
+
 
 
 total_p=melt(total[,c("introgressionid","Order","Suborder","Superfamily","focalclade")],id="introgressionid",value.name="taxon")
@@ -139,6 +141,8 @@ total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfa
 ###############Plotting
 a3=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4) ,legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("wheat","grey50"),name="")+ggtitle("C")
 
+hyde_bar=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4) ,legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("wheat","grey50"),name="")+ggtitle("A")
+
 #tSNE
 totalsig=total[total$introgressionid=="Introgression",c("Gamma","D")]
 total_dr=total[total$PvalueD<0.05 & total$D > 0 & total$Pvalue<10^-6,c(7:21)]/apply(total[total$PvalueD<0.05 & total$D > 0 & total$Pvalue<10^-6,c(7:21)],1,sum)
@@ -148,10 +152,10 @@ names(dat1)=c("tSNE1","tSNE2")
 dat1=cbind(dat1,totalsig)
 
 ###############Plotting
-a5=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = D),size=0.4,stroke=0)+scale_color_gradientn(colors = sunset,name="D",guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank())+ggtitle("E")
+a5=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = D),size=0.4,stroke=0)+scale_color_gradientn(colors = sunset,name="D",guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank())+ggtitle("D")
 
 ###############Plotting
-a6=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = Gamma),size=0.3,stroke=0)+scale_color_gradientn(colors = sunset,name=expression(gamma),guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",legend.background = element_blank())+ggtitle("F")
+a6=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = Gamma),size=0.3,stroke=0)+scale_color_gradientn(colors = sunset,name=expression(gamma),guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",legend.background = element_blank())+ggtitle("E")
 
 lay = rbind(c(1,1,1),
              c(2,2,2),
@@ -195,7 +199,7 @@ Libellulidae=extract.clade(tt,161)$tip.label
 
 
 
-total=read.csv("/Users/Anton/Downloads/dfoil_results.txt",stringsAsFactors=FALSE)
+total=read.csv("dfoil_results.txt",stringsAsFactors=FALSE)
 names(total)=names_v
 #Correct species order according to divergence times
 for (i in 1:nrow(total))
@@ -291,7 +295,10 @@ total_ord$variable=ifelse(total_ord$variable=="DFO_stat","D[FO]",ifelse(total_or
 
 
 ###############Plotting 
-g1=ggplot(total_ord[total_ord$taxon!="RANDOM",], aes(x=taxon, y=stat))+geom_violin(lwd=0.1,fill="plum2")+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2,position=position_dodge(0.9))+geom_boxplot(width=0.01,outlier.size=-1,position=position_dodge(0.9))+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1))+ylab(expression(D[FOIL]))+xlab("")+theme(legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ggtitle("A") 
+g1=ggplot(total_ord[total_ord$taxon!="RANDOM",], aes(x=taxon, y=stat))+geom_violin(lwd=0.1,fill="plum2")+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2,position=position_dodge(0.9))+geom_boxplot(width=0.01,outlier.size=-1,position=position_dodge(0.9))+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1))+ylab(expression(D[FOIL]))+xlab("")+theme(legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ggtitle("F") 
+
+
+
 
 #Proportions
 total_p=melt(total[,c("introgressionid","Order","Suborder","Superfamily","focalclade")],id="introgressionid",value.name="taxon")
@@ -363,7 +370,7 @@ Libellulidae=extract.clade(tt,161)$tip.label
 
 
 names_v=c("suborder","id","triplet","outgroup","C1","C2","mixprop1","mixprop2","lambda2Dist","lambda1Dist","BIC2Dist","BIC1Dist","count")
-total=read.csv("/Users/Anton/Downloads/quibl_results.txt",stringsAsFactors=FALSE,header=FALSE)
+total=read.csv("quibl_results.txt",stringsAsFactors=FALSE,header=FALSE)
 names(total)=names_v
 P1=gsub(" ","_",paste(unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",1)),unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",2))))
 P2=gsub(" ","_",paste(unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",3)),unlist(lapply(strsplit(as.character(total$triplet), "_"),"[",4))))
@@ -474,7 +481,7 @@ total_p$variable=replace(as.character(total_p$variable),as.character(total_p$var
 total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
 total_p=total_p[complete.cases(total_p), ]
 
-mq2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=Qtype))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5),size=3)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("gold","grey50","wheat"),name="")+ggtitle(" ")
+mq2=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=Qtype))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5),size=3)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4),legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("gold","grey50","wheat"),name="")+ggtitle("C")
 
 
 
@@ -507,6 +514,40 @@ intropairs=get_intropair_quibl(total)
 i1i2=as.vector(apply(intropairs,1,paste,collapse="_"))
 total_quibl=cbind(total,intropairs)    
 total_quibl$i1i2=i1i2
+
+
+
+################################################################ Additional Figures ########################################################################
+############################################################################################################################################################
+############################################################################################################################################################
+
+hyde_bar, g2 , mq2
+
+lay = rbind(c(1,1,1),
+             c(2,2,2),
+           c(3,3,3))
+
+quartz(width=7,height=7) 
+grid.arrange(hyde_bar,g2,mq2,layout_matrix = lay)
+
+quartz.save("Fig3.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
+quartz.save("Fig3.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
+
+
+#Supplement
+lay = rbind(c(1,1,1),
+             c(2,2,2),
+           c(3,4,5),
+           c(6,6,6))
+
+quartz(width=7,height=9.5) 
+grid.arrange(a1 ,a2 ,a4 ,a5 ,a6 ,g1,layout_matrix = lay)
+
+quartz.save("Suppl3.pdf", type = "pdf",antialias=F,bg="white",dpi=400,pointsize=12)
+quartz.save("Suppl3.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=12)
+
+
 
 
 
