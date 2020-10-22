@@ -50,6 +50,7 @@ dfoil_select_az=function(phy,id)
 
 tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
 Outgroup=c("Ephemera_danica")
+Odonata=keep.tip(tt,c(extract.clade(tt,87)$tip.label,Outgroup))
 Zygoptera=keep.tip(tt,c(extract.clade(tt,88)$tip.label,Outgroup))
 Anisoptera=keep.tip(tt,c(extract.clade(tt,136)$tip.label,Outgroup))
 
@@ -87,7 +88,7 @@ dfoil_select_az=function(phy,id)
 }    
 
 
-
+dfoil_select(Odonata,"Odonata_dfoil")
 dfoil_select(Anisoptera,"Anisoptera_dfoil")
 dfoil_select(Zygoptera,"Zygoptera_dfoil")
 dfoil_select_az(tt,"Anisozygoptera_dfoil")

@@ -9,6 +9,7 @@ library('pals')
 library('reshape2')
 library("svMisc")
 library("VennDiagram")
+library("MCMCtreeR")
 
 
 ################################################################ HyDe ######################################################################## 
@@ -332,10 +333,13 @@ get_intropair_dfoil=function(m)
         {
             pair=sort(as.character(unlist(m[i,c("P1","P2","P3","P4")][sort(as.numeric(unlist(strsplit(as.character(m[i,"introgression"]),split=""))))])))
             pair_v=rbind(pair_v,pair)
-        }else{
-            pair=c("none","none")
+        } else if (m[i,"introgression"]=="none") {
+            pair=sort(as.character(unlist(m[i,c(sample(c("P1","P2"),1),sample(c("P3","P4"),1))])))
             pair_v=rbind(pair_v,pair)
-        }    
+        } else {    
+            pair=sort(as.character(unlist(m[i,c("P1","P2","P3","P4")][sort(as.numeric(unlist(strsplit(as.character(m[i,"introgression"]),split=""))))[c(sample(1:2,1),3)]])))
+            pair_v=rbind(pair_v,pair)
+        }   
     }
     pair_v=data.frame(pair_v)
     names(pair_v)=c("i1","i2")
@@ -555,7 +559,7 @@ quartz.save("Suppl3.png", type = "png",antialias=F,bg="white",dpi=400,pointsize=
 ############################################################################################################################################################
 ############################################################################################################################################################
 
-################################################################ Overlap ###################################################################################
+################################################################ Venn Overlap ##############################################################################
 
 #Odonata
 hyde_u=unique(total_hyde[total_hyde$introgressionid=="Introgression","i1i2"])
@@ -591,6 +595,62 @@ for (i in unique(total_hyde$focalclade))
     quibl_u=unique(total_quibl[total_quibl$Qtype=="Introgression+ILS" & total_quibl$focalclade==i ,"i1i2"])
     venn.diagram(x = list(quibl_u,dfoil_u,hyde_u),category.names = c("Chi-square" , "Dfoil","HyDe"),filename = paste(i,"venn.png",sep=""),output=T,resolution =300)
 }    
+
+################################################################ TMRCA of introgressing species pairs ##########################################################
+
+###Find Tmrca
+findTMRCA=function(table_introg_pairs,dated_tree_path,mcmc_table)
+{
+    phy_mcmc=readMCMCtree(dated_tree_path)
+    phy=phy_mcmc$apePhy
+    tree_h=nodeheight(phy, node=85)
+    age_v=c()
+    node_v=c()
+    age_p_v=c()
+    total_b=table_introg_pairs
+    for (i in 1:nrow(total_b))
+    {
+        progress(i,nrow(total_b))
+        age_pair=tree_h-findMRCA(phy,c(total_b[i,"i1"],total_b[i,"i2"]),type="height")
+        node_pair=findMRCA(phy,c(total_b[i,"i1"],total_b[i,"i2"]),type="node")
+        age_p_pair=sample(mcmc_table[,as.character(node_pair)],10)
+        age_v=c(age_v,age_pair)
+        node_v=c(node_v,node_pair)
+        age_p_v=rbind(age_p_v,age_p_pair)
+    }
+    age_p_v=data.frame(age_p_v)
+    names(age_p_v)=paste("pp",1:10,sep="")
+    return(cbind(data.frame(total_b,TMRCA=age_v,nodeN=node_v),age_p_v))
+}    
+
+mcmc_age=read.table("mcmc4long.txt",header=T)
+mcmc_age$Gen=NULL
+mcmc_age$mu=NULL
+mcmc_age$sigma2=NULL
+mcmc_age$lnL=NULL
+names(mcmc_age)=86:(86-1+ncol(mcmc_age))
+
+hyde_nd=total_hyde[!duplicated(total_hyde$i1i2),]
+dfoil_nd=total_dfoil[!duplicated(total_dfoil$i1i2),]
+quibl_nd=total_quibl[!duplicated(total_quibl$i1i2),]
+
+
+
+t_hyde=findTMRCA(total_hyde,"FigTree4long.tre",mcmc_age)
+t_dfoil=findTMRCA(total_dfoil,"FigTree4long.tre",mcmc_age)
+t_quibl=findTMRCA(total_quibl,"FigTree4long.tre",mcmc_age)
+
+
+
+
+#Time-introgression plot for the entire tree 
+all_a=unlist(t_quibl[,paste("pp",1:10,sep="")])
+sig_a=unlist(t_quibl[t_quibl$Qtype=="Introgression+ILS" ,paste("pp",1:10,sep="")])
+d_a=data.frame(Age=c(all_a,sig_a),Distribution=c(rep("All",length(all_a)),rep("Sig.",length(sig_a))))
+quartz(width=6.5, height=4.3)
+ggplot(d_a, aes(x=Age, fill=Distribution))+geom_density(alpha=1,position = "stack")+scale_fill_manual(values=c("dodgerblue4", "gold"))+ geom_vline(xintercept = unique(sig_a),linetype="dashed", color = "red", size=1)
+
+
 
 
 ################################################################ Statisitcal tests #############################################################################
