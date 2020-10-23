@@ -721,4 +721,45 @@ get_wilx_dfoil(total_dfoil,c("DFO_stat","DIL_stat","DFI_stat","DOL_stat"))
 
 #Excess of introgression cases for Anisozygoptera
 fisher.test(matrix(c(16096,91648,5896,32456),ncol=2))
- 
+
+
+
+################################################################ Branch Length Test ##########################################################
+#Rscript blt_anisozygoptera.r BUSCO50_dna_pasta_nopart_iqtree_root.tre BUSCO50_dna_pasta_iqtree_all "Anizo"
+#Rscript blt_random.r BUSCO50_dna_pasta_nopart_iqtree_root.tre BUSCO50_dna_pasta_iqtree_all "Random"
+#Rscript blt_similar_age.r BUSCO50_dna_pasta_nopart_iqtree_root.tre BUSCO50_dna_pasta_iqtree_all ZYG 131 89 
+#Rscript blt_similar_age.r BUSCO50_dna_pasta_nopart_iqtree_root.tre BUSCO50_dna_pasta_iqtree_all ANISO 137 143 
+
+
+tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
+Zygoptera=extract.clade(tt,88)$tip.label
+Anisoptera=extract.clade(tt,136)$tip.label
+bld=read.table("bl_distr.txt",header=T)
+bld$topo=ifelse(bld$root_tip %in% Zygoptera, "concordant",ifelse(bld$root_tip %in% Anisoptera,"discord1","discord2"))
+
+
+
+ggplot(bld, aes(x=((brl1/trl)+(brl2/trl))/2, fill=topo))+geom_density(alpha=1,position = "stack")+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+xlim(0,0.1)
+
+
+names_vb=c("clade","P1out","P2out","P3out","CountP1","CountP2","CountP3","PvalueChi","meanT_concord","meanT_discord1","meanT_discord2","PvalueWCOMC1","PvalueWCOMC2","PvalueWC1C2")
+total_b=read.csv("Anizo_blt.txt",stringsAsFactors=FALSE,header=F)
+names(total_b)=names_vb
+total_b$PvalueChi=p.adjust(total_b$PvalueChi,method="fdr")
+total_b$PvalueWCOMC1=p.adjust(total_b$PvalueWCOMC1,method="fdr") 
+total_b$PvalueWCOMC2=p.adjust(total_b$PvalueWCOMC2,method="fdr") 
+total_b$PvalueWC1C2=p.adjust(total_b$PvalueWC1C2,method="fdr") 
+
+b_wilcox=get_intropair_blt_wilcox(total_b)
+b_chisq=get_intropair_blt_chisq(total_b)
+
+m_ch=b_chisq
+m_wilx=b_wilcox
+m_overlap=cbind(b_chisq[,1:2],b_chisq$pass=="TRUE" & b_wilcox$pass=="TRUE")
+names(b_wilcox)=c("i1_wilx","i2_wilx","pass_wilx","totalbl_pass")
+names(b_chisq)=c("i1_chi","i2_chi","pass_chi")
+names(m_overlap)=c("i1","i2","pass")
+
+
+
+
