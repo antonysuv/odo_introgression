@@ -734,11 +734,11 @@ fisher.test(matrix(c(16096,91648,5896,32456),ncol=2))
 tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
 Zygoptera=extract.clade(tt,88)$tip.label
 Anisoptera=extract.clade(tt,136)$tip.label
-bld=read.table("bl_distr.txt",header=T)
+bld=read.table("brls_odo.txt",header=T)
 bld$clade=rep(c("Anisozygoptera","Random","Anisoptera","Zygoptera"),c(1185005,1896785,1853621,2900520))
 
 ggplot(bld, aes(x=((brl1/trl)+(brl2/trl))/2, fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+xlim(0,1)+facet_wrap(~clade)+xlab("distance s1 s2")
-ggplot(bld, aes(x=(brl_int), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+xlim(0,1)+facet_wrap(~clade)+xlab("internal branch length")
+ggplot(bld, aes(x=brl_int/trl, fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+xlim(0,0.15)+facet_wrap(~clade)+xlab("internal branch length")
 
 #bld$topo=ifelse(bld$root_tip %in% Zygoptera, "concordant",ifelse(bld$root_tip %in% Anisoptera,"discord1","discord2"))
 
