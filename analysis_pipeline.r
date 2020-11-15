@@ -22,14 +22,28 @@ get_density = function(x, y, ...)
   return(dens$z[ii])
 }
 
+good_tri=function(P1,H,P2,phy)
+{
+    tri=keep.tip(phy,c(P1,H,P2))
+    return(any(c(is.monophyletic(tri,c(P1,H)),is.monophyletic(tri,c(P2,H)))))
+}    
+
+
+
+
+
+
+
 tt=as.character(read.table("taxa_map.txt")$V2)
+phy=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
+phy$tip.label=tt
 Zygoptera=tt[1:48]
 Anisoptera=tt[50:83]
 Anisozygoptera=tt[49]
 Lestoidea=tt[44:48]
 Calopterygoidea=tt[1:19]
 Coenagrionoidea=tt[20:42]
-#Aeshnoidea=tt[50:63]
+Aeshnoidea=tt[50:63]
 Cordulegastroidea=tt[64:69]
 Libelluloidea=tt[70:83]
 Platystictidae=tt[43]
@@ -38,11 +52,20 @@ Gomphidae_Petaluridae=tt[57:63]
 Libellulidae=tt[75:83]
 
 
-total=read.table("hyde_all_tri-out_noephemera.txt",header=T)
+total=read.table("hyde_all_tri-out_noephemera.txt",header=T,stringsAsFactors=F)
+tri_good=c()
+for (tr in 1:nrow(total))
+{
+    progress(tr,nrow(total))
+    v=good_tri(total[tr,1],total[tr,2],total[tr,3],phy)
+    tri_good=c(tri_good,v)         
+} 
+total$trip_good=tri_good
 total=total[complete.cases(total),]
 total$Pvalue=p.adjust(total$Pvalue,method="bonferroni")
 total$D=(total$ABBA-total$ABAB)/(total$ABBA+total$ABAB)
 total=total[total$Gamma<=1 & total$Gamma>=0, ]
+total=total[total$trip_good==TRUE,]
 
 #Chisq test for D significance
 chiPd=unlist(lapply(apply(total[,c("ABBA","ABAB")],1,chisq.test),"[[","p.value"))
@@ -64,20 +87,24 @@ total$P1sub=ifelse(total$P1 %in% Lestoidea,"Lestoidea",
                    ifelse(total$P1 %in% Calopterygoidea,"Calopterygoidea",
                    ifelse(total$P1 %in% Platystictidae,"Platystictidae",
                    ifelse(total$P1 %in% Aeshnidae,"Aeshnidae",
+                   ifelse(total$P1 %in% Aeshnoidea,"Aeshnoidea",
+                   ifelse(total$P1 %in% Platystictidae,"Platystictoidea",       
                    ifelse(total$P1 %in% Gomphidae_Petaluridae,"Gomphidae+Petaluridae",
                    ifelse(total$P1 %in% Cordulegastroidea,"Cordulegastroidea",
                    ifelse(total$P1 %in% Libelluloidea,"Libelluloidea",
-                   ifelse(total$P1 %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))
+                   ifelse(total$P1 %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))))
 
 total$Hybridsub=ifelse(total$Hybrid %in% Lestoidea,"Lestoidea",
                    ifelse(total$Hybrid %in% Coenagrionoidea,"Coenagrionoidea",
                    ifelse(total$Hybrid %in% Calopterygoidea,"Calopterygoidea",
                    ifelse(total$Hybrid %in% Platystictidae,"Platystictidae",
                    ifelse(total$Hybrid %in% Aeshnidae,"Aeshnidae",
+                   ifelse(total$Hybrid %in% Aeshnoidea,"Aeshnoidea",
+                   ifelse(total$Hybrid %in% Platystictidae,"Platystictoidea",       
                    ifelse(total$Hybrid %in% Gomphidae_Petaluridae,"Gomphidae+Petaluridae",
                    ifelse(total$Hybrid %in% Cordulegastroidea,"Cordulegastroidea",
                    ifelse(total$Hybrid %in% Libelluloidea,"Libelluloidea",
-                   ifelse(total$Hybrid %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))
+                   ifelse(total$Hybrid %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))))
 
 
 total$P2sub=ifelse(total$P2 %in% Lestoidea,"Lestoidea",
@@ -85,10 +112,12 @@ total$P2sub=ifelse(total$P2 %in% Lestoidea,"Lestoidea",
                    ifelse(total$P2 %in% Calopterygoidea,"Calopterygoidea",
                    ifelse(total$P2 %in% Platystictidae,"Platystictidae",
                    ifelse(total$P2 %in% Aeshnidae,"Aeshnidae",
+                   ifelse(total$P2 %in% Aeshnoidea,"Aeshnoidea",
+                   ifelse(total$P1 %in% Platystictidae,"Platystictoidea",
                    ifelse(total$P2 %in% Gomphidae_Petaluridae,"Gomphidae+Petaluridae",
                    ifelse(total$P2 %in% Cordulegastroidea,"Cordulegastroidea",
                    ifelse(total$P2 %in% Libelluloidea,"Libelluloidea",
-                   ifelse(total$P2 %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))
+                   ifelse(total$P2 %in% Anisozygoptera,"Epiophlebiidae","RANDOM")))))))))))
 
 #Ephiophlebia only between Zygoptera and Anisoptera 
 nodups=!apply(t(apply(total[,c("P1sub","Hybridsub","P2sub")],1,duplicated)),1,any)
@@ -97,27 +126,29 @@ total$Order="Odonata"
 
 total$Suborder=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Zygoptera),1,all) ,"Zygoptera",
                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Anisoptera),1,all),"Anisoptera",
-                     ifelse(total$Hybrid==Anisozygoptera & nodups & total$P1subo!=total$P2subo,"Anisozygoptera","RANDOM")))
+                     ifelse(total$Hybrid %in% Anisozygoptera,"Anisozygoptera","RANDOM")))
 
 total$Superfamily=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Lestoidea),1,all),"Lestoidea",
+                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Aeshnoidea),1,all),"Aeshnoidea",
+                       ifelse(total$Hybrid %in% Platystictidae,"Platystictoidea",       
                        ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Calopterygoidea),1,all),"Calopterygoidea",
                        ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Coenagrionoidea),1,all),"Coenagrionoidea",
                        ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Cordulegastroidea),1,all),"Cordulegastroidea",
-                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Libelluloidea),1,all),"Libelluloidea","RANDOM")))))       
+                       ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Libelluloidea),1,all),"Libelluloidea","RANDOM")))))))       
                               
-total$focalclade=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Aeshnidae),1,all),"Aeshnidae",
-                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Gomphidae_Petaluridae),1,all),"Gomphidae+Petaluridae",
-                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Libellulidae),1,all),"Libellulidae","RANDOM")))
+#total$focalclade=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Aeshnidae),1,all),"Aeshnidae",
+#                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Gomphidae_Petaluridae),1,all),"Gomphidae+Petaluridae",
+#                      ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Libellulidae),1,all),"Libellulidae","RANDOM")))
 
 total=total[total$D >= 0,]
 total$introgressionid=ifelse(total$PvalueD<0.05 & total$Pvalue<10^-6,"Introgression","None") 
 sunset=c("#364B9A" ,"#4A7BB7", "#6EA6CD", "#98CAE1" ,"#C2E4EF" ,"#EAECCC", "#FEDA8B" ,"#FDB366", "#F67E4B", "#DD3D2D", "#A50026")
 #D and Gamma distributions Violin plots
 
-total_ord=melt(total[,c("D","Gamma","Pvalue","Order","Suborder","Superfamily","focalclade","PvalueD")],value.name="taxon",id=c("D","Gamma","Pvalue","PvalueD"))
+total_ord=melt(total[,c("D","Gamma","Pvalue","Order","Suborder","Superfamily","PvalueD")],value.name="taxon",id=c("D","Gamma","Pvalue","PvalueD"))
 total_ord=total_ord[total_ord$taxon!="RANDOM",]
-total_ord$variable=replace(as.character(total_ord$variable),as.character(total_ord$variable)=="focalclade","Focal clade")
-total_ord$variable_f=factor(total_ord$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+#total_ord$variable=replace(as.character(total_ord$variable),as.character(total_ord$variable)=="focalclade","Focal clade")
+total_ord$variable_f=factor(total_ord$variable, levels=c("Order","Suborder","Superfamily"))
 
 ###############Plotting
 a1=ggplot(total_ord[total_ord$PvalueD<0.05 & total_ord$D > 0,], aes(x=taxon, y=D))+geom_violin(fill='olivedrab3')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),plot.margin=unit(c(0,0.1,0,0.1), "cm"))+ylab("D")+xlab("")+ggtitle("A")
@@ -134,10 +165,10 @@ a4=ggplot(dat,aes(Gamma, D, color = density)) + geom_point(size=0.4,stroke=0)+ge
 
 
 
-total_p=melt(total[,c("introgressionid","Order","Suborder","Superfamily","focalclade")],id="introgressionid",value.name="taxon")
+total_p=melt(total[,c("introgressionid","Order","Suborder","Superfamily")],id="introgressionid",value.name="taxon")
 total_p=total_p[total_p$taxon!="RANDOM",]
-total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
-total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily","Focal clade"))
+#total_p$variable=replace(as.character(total_p$variable),as.character(total_p$variable)=="focalclade","Focal clade")
+total_p$variable_f=factor(total_p$variable, levels=c("Order","Suborder","Superfamily"))
 
 ###############Plotting
 a3=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=introgressionid))+geom_bar(position="fill")+facet_grid(~variable_f,scales = "free", space = "free")+geom_text(aes(label=..count..),stat="count",position=position_fill(vjust=0.5))+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),legend.position=c(0.5,1.4) ,legend.direction="horizontal",legend.background = element_blank())+ylab("Proportion")+xlab("")+scale_fill_manual(values=c("wheat","grey50"),name="")+ggtitle("C")
