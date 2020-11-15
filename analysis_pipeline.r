@@ -675,8 +675,8 @@ t_quibl=findTMRCA(total_quibl,"FigTree4long.tre",mcmc_age)
 
 
 #Time-introgression plot for the entire tree 
-all_a=unlist(t_quibl[,paste("pp",1:10,sep="")])
-sig_a=unlist(t_quibl[t_quibl$Qtype=="Introgression+ILS" ,paste("pp",1:10,sep="")])
+all_a=unlist(t_hyde[,paste("pp",1:10,sep="")])
+sig_a=unlist(t_hyde[t_hyde$introgressionid=="Introgression" ,paste("pp",1:10,sep="")])
 d_a=data.frame(Age=c(all_a,sig_a),Distribution=c(rep("All",length(all_a)),rep("Sig.",length(sig_a))))
 quartz(width=6.5, height=4.3)
 ggplot(d_a, aes(x=Age, fill=Distribution))+geom_density(alpha=1,position = "stack")+scale_fill_manual(values=c("dodgerblue4", "gold"))+ geom_vline(xintercept = unique(sig_a),linetype="dashed", color = "red", size=1)
@@ -765,8 +765,13 @@ fisher.test(matrix(c(16096,91648,5896,32456),ncol=2))
 tt=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
 Zygoptera=extract.clade(tt,88)$tip.label
 Anisoptera=extract.clade(tt,136)$tip.label
-bld=read.table("bl_distr.txt",header=T)
-bld$topo=ifelse(bld$root_tip %in% Zygoptera, "concordant",ifelse(bld$root_tip %in% Anisoptera,"discord1","discord2"))
+bld=read.table("brls_odo.txt",header=T)
+bld$clade=rep(c("Anisozygoptera","Random","Anisoptera","Zygoptera"),c(1185005,1896785,1853621,2900520))
+
+ggplot(bld, aes(x=((brl1/trl)+(brl2/trl))/2, fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+xlim(0,0.15)+facet_wrap(~clade)+xlab("distance s1 s2")
+ggplot(bld, aes(x=brl_int/trl, fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+xlim(0,0.15)+facet_wrap(~clade)+xlab("internal branch length")
+
+#bld$topo=ifelse(bld$root_tip %in% Zygoptera, "concordant",ifelse(bld$root_tip %in% Anisoptera,"discord1","discord2"))
 
 
 
