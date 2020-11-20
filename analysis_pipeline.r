@@ -30,10 +30,6 @@ good_tri=function(P1,H,P2,phy)
 
 
 
-
-
-
-
 tt=as.character(read.table("taxa_map.txt")$V2)
 phy=read.tree("BUSCO50_dna_pasta_nopart_iqtree_root.tre")
 phy$tip.label=tt
@@ -71,6 +67,7 @@ total=total[total$trip_good==TRUE,]
 chiPd=unlist(lapply(apply(total[,c("ABBA","ABAB")],1,chisq.test),"[[","p.value"))
 chiPd=p.adjust(chiPd,method="bonferroni")
 total$PvalueD=chiPd
+total$Gamma=ifelse(total$Gamma>0.5,1-total$Gamma,total$Gamma)
 
 total$P1subo=ifelse(total$P1 %in% Zygoptera,"Zygoptera",
                     ifelse(total$P1 %in% Anisoptera,"Anisoptera","Anisozygoptera"))
@@ -143,18 +140,19 @@ total$Superfamily=ifelse(apply(apply(total[,c("P1","P2","Hybrid")],2,"%in%",Lest
 total=total[total$D >= 0,]
 total$introgressionid=ifelse(total$PvalueD<0.05 & total$Pvalue<10^-6,"Introgression","None") 
 sunset=c("#364B9A" ,"#4A7BB7", "#6EA6CD", "#98CAE1" ,"#C2E4EF" ,"#EAECCC", "#FEDA8B" ,"#FDB366", "#F67E4B", "#DD3D2D", "#A50026")
-#D and Gamma distributions Violin plots
 
+#D and Gamma distributions Violin plots
 total_ord=melt(total[,c("D","Gamma","Pvalue","Order","Suborder","Superfamily","PvalueD")],value.name="taxon",id=c("D","Gamma","Pvalue","PvalueD"))
 total_ord=total_ord[total_ord$taxon!="RANDOM",]
 #total_ord$variable=replace(as.character(total_ord$variable),as.character(total_ord$variable)=="focalclade","Focal clade")
 total_ord$variable_f=factor(total_ord$variable, levels=c("Order","Suborder","Superfamily"))
+total_ord$Gamma1=ifelse(total_ord$Gamma>0.5,1-total_ord$Gamma,total_ord$Gamma)
 
 ###############Plotting
-a1=ggplot(total_ord[total_ord$PvalueD<0.05 & total_ord$D > 0,], aes(x=taxon, y=D))+geom_violin(fill='olivedrab3')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),plot.margin=unit(c(0,0.1,0,0.1), "cm"))+ylab("D")+xlab("")+ggtitle("A")
+a1=ggplot(total_ord[total_ord$PvalueD<0.05 & total_ord$D > 0,], aes(x=taxon, y=D))+geom_violin(lwd=0.1,fill='olivedrab3')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),plot.margin=unit(c(0,0.1,0,0.1), "cm"))+ylab("D")+xlab("")+ggtitle("A")
 
 ###############Plotting
-a2=ggplot(total_ord[total_ord$Pvalue<10^-6,], aes(x=taxon, y=Gamma))+geom_violin(fill='cornflowerblue')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=median, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),plot.margin=unit(c(0,0.1,0,0.1), "cm"))+ylab(expression(gamma))+xlab("")+ggtitle("B")
+a2=ggplot(total_ord[total_ord$Pvalue<10^-6,], aes(x=taxon, y=Gamma))+geom_violin(lwd=0.1,fill='cornflowerblue')+facet_grid(~variable_f,scales = "free", space = "free")+stat_summary(fun.y=mean, geom="point", size=2, color="black")+geom_boxplot(width=0.01,outlier.size=-1)+theme(axis.text.x = element_text(size = 8,angle=15,hjust = 1),plot.margin=unit(c(0,0.1,0,0.1), "cm"))+ylab(expression(gamma))+xlab("")+ggtitle("B")
 
 dat=total_ord[total_ord$PvalueD<0.05 & total_ord$D > 0 & total_ord$Pvalue<10^-6,]
 dat$density = get_density(dat$Gamma, dat$D, n = 100)
@@ -187,7 +185,7 @@ dat1=cbind(dat1,totalsig)
 a5=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = D),size=0.4,stroke=0)+scale_color_gradientn(colors = sunset,name="D",guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",strip.background = element_rect(colour = "white", fill = "white"),legend.background = element_blank())+ggtitle("D")
 
 ###############Plotting
-a6=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = Gamma),size=0.3,stroke=0)+scale_color_gradientn(colors = sunset,name=expression(gamma),guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",legend.background = element_blank())+ggtitle("E")
+a6=ggplot(dat1) + geom_point(aes(tSNE1, tSNE2, color = Gamma),size=0.4,stroke=0)+scale_color_gradientn(colors = sunset,name=expression(gamma),guide=guide_colorbar(barwidth = 6,barheight =0.5,label.theme = element_text(size=8)))+theme_classic()+theme(legend.position=c(0.5,1.05) ,legend.direction="horizontal",legend.background = element_blank())+ggtitle("E")
 
 lay = rbind(c(1,1,1),
              c(2,2,2),
