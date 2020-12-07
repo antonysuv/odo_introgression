@@ -750,17 +750,18 @@ ch5=ggplot(bl[bl$Superfamily_within!="RANDOM",], aes(x=(brl1+brl2)/(2*trl), fill
         
 blaz=bl[bl$Superfamily_between=="1",]
 blaz$Superfamily_between="Anisozygoptera"
+blaz=blaz[blaz$trl<25,]           
 blaz$topo=ifelse(blaz$root_tip %in% Anisoptera,"discord1",ifelse(blaz$root_tip %in% Anisozygoptera,"discord2","concord"))        
 
 
 blaz=bl[bl$Superfamily_between=="5",]
-blaz$Superfamily_between="Test"        
+blaz$Superfamily_between="Test" 
 blaz$topo=ifelse(blaz$root_tip %in% Platystictidae,"discord1",ifelse(blaz$root_tip %in% c(Calopterygoidea,Coenagrionoidea),"discord2","concord"))        
         
         
 
         
-ch_az=ggplot(blaz, aes(x=(brl1+brl2)/(trl*2), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(name = "",values=c("dodgerblue4", "gold","orange"))+xlim(0,0.1)+facet_wrap(~Superfamily_between)+xlab("")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1),legend.position=c(0.8,0.9),legend.direction="vertical",legend.background = element_blank(),legend.key.size = unit(0.5, "cm"),legend.key.width = unit(0.5,"cm"))+ggtitle("C")+xlab("distance")
+ch_az=ggplot(blaz, aes(x=(brl1+brl2)/(trl*2), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(name = "",values=c("dodgerblue4", "gold","orange"))+xlim(0,0.15)+facet_wrap(~Superfamily_between)+xlab("")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1),legend.position=c(0.8,0.9),legend.direction="vertical",legend.background = element_blank(),legend.key.size = unit(0.5, "cm"),legend.key.width = unit(0.5,"cm"))+ggtitle("C")+xlab("distance")
         
         +geom_vline(data=mu, aes(xintercept=grp.mean, color=topo),linetype="dashed",size=1)+scale_color_manual(name = "",values=c("dodgerblue4", "gold","orange"))   
 
