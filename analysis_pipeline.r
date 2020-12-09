@@ -683,7 +683,7 @@ total$Superfamily_within=ifelse(apply(apply(total[,c("P1out","P2out","P3out")],2
                        ifelse(apply(apply(total[,c("P1out","P2out","P3out")],2,"%in%",Gomphidae_Petaluridae),1,all),"Aeshnoidea(Gomphidae+Petaluridae)",       
                        ifelse(apply(apply(total[,c("P1out","P2out","P3out")],2,"%in%",Cordulegastroidea),1,all),"Cordulegastroidea",
                        ifelse(apply(apply(total[,c("P1out","P2out","P3out")],2,"%in%",Libelluloidea),1,all),"Libelluloidea","RANDOM")))))))        
-        
+total=total[total$congruent==T,]        
         
         
         
@@ -700,10 +700,11 @@ ch1=ggplot(total_p, aes(x=taxon, y=..count../sum(..count..),fill=introgressionid
 
 ################Branch Lengths         
 bl=read.table("all_brls.csv",stringsAsFactors=FALSE,header=F)          
-names_bl=c("clade_name","P1","P2","P3","brl1","brl2","trl","brl_out","brl_int","root_tip","topo","topo_con_sp","good_trip")
+names_bl=c("clade_name","P1","P2","P3","brl1","brl2","trl","brl_out","brl_int","root_tip","topo","topo_con_sp","good_trip","tripl","sig")
 names(bl)=names_bl
+bl=bl[bl$good_trip==TRUE,]
+hist(bl$trl,nclass=1000)        
 
-        
 bl$Order="Odonata"
 
 bl$Suborder=ifelse(apply(apply(bl[,c("P1","P2","P3")],2,"%in%",Zygoptera),1,all) ,"Zygoptera",
@@ -727,20 +728,21 @@ bl$Superfamily_within=ifelse(apply(apply(bl[,c("P1","P2","P3")],2,"%in%",Lestoid
                        ifelse(apply(apply(bl[,c("P1","P2","P3")],2,"%in%",Gomphidae_Petaluridae),1,all),"Aeshnoidea(Gomphidae+Petaluridae)",       
                        ifelse(apply(apply(bl[,c("P1","P2","P3")],2,"%in%",Cordulegastroidea),1,all),"Cordulegastroidea",
                        ifelse(apply(apply(bl[,c("P1","P2","P3")],2,"%in%",Libelluloidea),1,all),"Libelluloidea","RANDOM")))))))        
+#Distance        
+bl$d=(bl$brl1+bl$brl2)/(bl$trl)
+bl$topo=ifelse(bl$topo==0,"concord",ifelse(bl$topo==1,"discord1","discord2"))        
         
-        
-        
-ch2=ggplot(bl[bl$Order!="RANDOM",], aes(x=log(brl_int/trl), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Order)+xlab("internal branch length")+ theme(legend.position = "none")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1)) 
+ch2=ggplot(bl[bl$Order!="RANDOM" & bl$trl<25,], aes(x=log(brl_int/trl), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Order)+xlab("internal branch length")+ theme(legend.position = "none")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1)) 
 ch3=ggplot(bl[bl$Suborder!="RANDOM",], aes(x=log(brl_int/trl), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Suborder)+xlab("")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1),legend.position=c(0.5,-0.6),legend.direction="horizontal",legend.background = element_blank())
 ch4=ggplot(bl[bl$Superfamily_between!="RANDOM",], aes(x=log(brl_int/trl), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Superfamily_between)+xlab("")+ theme(legend.position = "none")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1))
 ch5=ggplot(bl[bl$Superfamily_within!="RANDOM",], aes(x=log(brl_int/trl), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Superfamily_within)+xlab("")+ theme(legend.position = "none")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1))        
         
 
-bl$d=(bl$brl1+bl$brl2)/(bl$trl*2)
+
         
-ch2=ggplot(bl[bl$Order!="RANDOM",], aes(x=(brl1+brl2)/(2*trl), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Order)+xlab("distance")+ theme(legend.position = "none")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1))+xlim(0,0.1) 
+ch2=ggplot(bl[bl$Order!="RANDOM" & bl$trl<10,], aes(x=d, fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Order)+xlab("distance")+ theme(legend.position = "none")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1))+xlim(0,0.1) 
 ch3=ggplot(bl[bl$Suborder!="RANDOM",], aes(x=(brl1+brl2)/(2*trl), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Suborder)+xlab("")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1),legend.position=c(0.5,-0.6),legend.direction="horizontal",legend.background = element_blank())+xlim(0,0.1)
-ch4=ggplot(bl[bl$Superfamily_between!="RANDOM",], aes(x=(brl1+brl2)/(2*trl), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Superfamily_between)+xlab("")+ theme(legend.position = "none")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1))+xlim(0,0.1)
+ch4=ggplot(bl[bl$Superfamily_between!="RANDOM" & bl$trl<10,], aes(x=d, fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Superfamily_between)+xlab("")+ theme(legend.position = "none")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1))+xlim(0,0.1)
 ch5=ggplot(bl[bl$Superfamily_within!="RANDOM",], aes(x=(brl1+brl2)/(2*trl), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(values=c("dodgerblue4", "gold","orange"))+facet_wrap(~Superfamily_within)+xlab("")+ theme(legend.position = "none")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1))+xlim(0,0.03)        
         
         
@@ -750,7 +752,6 @@ ch5=ggplot(bl[bl$Superfamily_within!="RANDOM",], aes(x=(brl1+brl2)/(2*trl), fill
         
 blaz=bl[bl$Superfamily_between=="1",]
 blaz$Superfamily_between="Anisozygoptera"
-blaz=blaz[blaz$trl<25,]           
 blaz$topo=ifelse(blaz$root_tip %in% Anisoptera,"discord1",ifelse(blaz$root_tip %in% Anisozygoptera,"discord2","concord"))        
 
 
@@ -761,7 +762,7 @@ blaz$topo=ifelse(blaz$root_tip %in% Platystictidae,"discord1",ifelse(blaz$root_t
         
 
         
-ch_az=ggplot(blaz, aes(x=(brl1+brl2)/(trl*2), fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(name = "",values=c("dodgerblue4", "gold","orange"))+xlim(0,0.15)+facet_wrap(~Superfamily_between)+xlab("")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1),legend.position=c(0.8,0.9),legend.direction="vertical",legend.background = element_blank(),legend.key.size = unit(0.5, "cm"),legend.key.width = unit(0.5,"cm"))+ggtitle("C")+xlab("distance")
+ch_az=ggplot(blaz[blaz$sig==T,], aes(x=d, fill=topo))+geom_density(alpha=0.5)+scale_fill_manual(name = "",values=c("dodgerblue4", "gold","orange"))+xlim(0,0.15)+facet_wrap(~Superfamily_between)+xlab("")+theme(axis.text.x = element_text(size = 8, angle=15, hjust = 1),legend.position=c(0.8,0.9),legend.direction="vertical",legend.background = element_blank(),legend.key.size = unit(0.5, "cm"),legend.key.width = unit(0.5,"cm"))+ggtitle("C")+xlab("distance")
         
         +geom_vline(data=mu, aes(xintercept=grp.mean, color=topo),linetype="dashed",size=1)+scale_color_manual(name = "",values=c("dodgerblue4", "gold","orange"))   
 

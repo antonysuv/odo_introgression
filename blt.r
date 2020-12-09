@@ -24,6 +24,7 @@ test_triplet=function(taxa,gene_trees,clade_name,sp_tree)
     out_all=c()
     root_tip_all=c()
     concord_all=c()
+    tripl_all=c()
     ind=0
     sp_trip=keep.tip(sp_tree,taxa)
     sp_out=drop.tip(sp_trip,extract.clade(sp_trip,node=5)$tip.label)$tip.label
@@ -41,10 +42,14 @@ test_triplet=function(taxa,gene_trees,clade_name,sp_tree)
             brls=extract.clade(tre_trip,max(tre_trip$edge))$edge.length
             root_tip=tre_trip$tip.label[!tre_trip$tip.label %in% extract.clade(tre_trip,max(tre_trip$edge))$tip.label]
             trl_all=c(trl_all,trl)
-            out_all=c(out_all,tre_trip$edge.length[which(tre_trip$edge[,1]==4 & (tre_trip$edge[,2]==1 | tre_trip$edge[,2]==2 | tre_trip$edge[,2]==3))])
-            internal_all=c(internal_all,tre_trip$edge.length[which(tre_trip$edge[,1]==4 & tre_trip$edge[,2]==5)])
+            outl=tre_trip$edge.length[which(tre_trip$edge[,1]==4 & (tre_trip$edge[,2]==1 | tre_trip$edge[,2]==2 | tre_trip$edge[,2]==3))]
+            out_all=c(out_all,outl)
+            internall=tre_trip$edge.length[which(tre_trip$edge[,1]==4 & tre_trip$edge[,2]==5)]
+            internal_all=c(internal_all,internall)
             brls_all1=c(brls_all1,brls[1])
             brls_all2=c(brls_all2,brls[2])
+            tripls=mean(c(mean(c(brls[1],brls[2]))+internall,outl))
+            tripl_all=c(tripl_all,tripls)
             root_tip_all=c(root_tip_all,root_tip)
             concord_all=c(concord_all,concord_t)
             
@@ -54,8 +59,7 @@ test_triplet=function(taxa,gene_trees,clade_name,sp_tree)
     con=names(which.max(counts))
     dis=names(which.min(counts))
     #0=concord 1=discord1 2=discord2 
-    m=data.frame(clade_name,P1=tre_trip$tip.label[1],P2=tre_trip$tip.label[2],P3=tre_trip$tip.label[3],brl1=brls_all1,brl2=brls_all2,trl=trl_all,brl_out=out_all,brl_int=internal_all,root_tip=root_tip_all,topo=ifelse(root_tip_all %in% con,"0",ifelse(root_tip_all %in% dis,"2","1")),topo_con_sp=concord_all,good_trip=con==sp_out)
-    write.table(m,paste(c(taxa,"csv"),collapse="."),quote=F,row.names=F,col.names=F)
+    m=data.frame(clade_name,P1=tre_trip$tip.label[1],P2=tre_trip$tip.label[2],P3=tre_trip$tip.label[3],brl1=brls_all1,brl2=brls_all2,trl=trl_all,brl_out=out_all,brl_int=internal_all,root_tip=root_tip_all,topo=ifelse(root_tip_all %in% con,"concord",ifelse(root_tip_all %in% dis,"discord1","discord2")),topo_con_sp=concord_all,good_trip=con==sp_out,tripl=tripl_all)
     if(!any(table(m$root_tip)==0) & length(table(m$root_tip))==3)
     {
         counts=table(m$root_tip)
@@ -73,9 +77,10 @@ test_triplet=function(taxa,gene_trees,clade_name,sp_tree)
         w_test=wilcox.test(c1,c2)$p.value
         chi=chisq.test(not_com_c)$p.value
         v_out=c(clade_name,names(counts),counts,congruent,chi,mean(ccom),mean(c1),mean(c2),w_testc1,w_testc2,w_test)
+        m$sig=chi<0.05 & w_test<0.05
+        write.table(m,paste(c(taxa,"csv"),collapse="."),quote=F,row.names=F,col.names=F)
         return(as.vector(v_out))
-    } 
-  
+    }
 
 }    
 
@@ -100,7 +105,7 @@ getstats_triplets=function(gene_trees,taxa_combn,clade_name,sp_tree)
         return(stats)
         
     }
-                                names_vb=c("clade","P1out","P2out","P3out","CountP1","CountP2","CountP3","congruent","PvalueChi","meanT_concord","meanT_discord1","meanT_discord2","PvalueWCOMC1","PvalueWCOMC2","PvalueWC1C2")
+                        names_vb=c("clade","P1out","P2out","P3out","CountP1","CountP2","CountP3","congruent","PvalueChi","meanT_concord","meanT_discord1","meanT_discord2","PvalueWCOMC1","PvalueWCOMC2","PvalueWC1C2")
     out_t=data.frame(out_t)
     names(out_t)=names_vb
     write.table(as.data.frame(out_t),paste(clade_name,".out",sep=""),quote = F, row.names = F, col.names = F,sep=",")
