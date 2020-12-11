@@ -7,12 +7,7 @@ library("phangorn")
 library("foreach")
 #library("doParallel")
 
-
-
 args = commandArgs(trailingOnly=TRUE)
-
-
-
 
 test_triplet=function(taxa,gene_trees,clade_name,sp_tree)
 {
@@ -38,7 +33,7 @@ test_triplet=function(taxa,gene_trees,clade_name,sp_tree)
             tre=root(tre,sample(tre$tip.label[tre$tip.label %in% c("Ephemera_danica","Isonychia_kiangsinensis")],1))
             trl=sum(tre$edge.length)
             tre_trip=keep.tip(tre,taxa)
-            concord_t=as.numeric(drop.tip(tre_trip,extract.clade(tre_trip,node=5)$tip.label)$tip.label!=sp_out)
+            concord_t=drop.tip(tre_trip,extract.clade(tre_trip,node=5)$tip.label)$tip.label==sp_out
             brls=extract.clade(tre_trip,max(tre_trip$edge))$edge.length
             root_tip=tre_trip$tip.label[!tre_trip$tip.label %in% extract.clade(tre_trip,max(tre_trip$edge))$tip.label]
             trl_all=c(trl_all,trl)
@@ -55,29 +50,28 @@ test_triplet=function(taxa,gene_trees,clade_name,sp_tree)
             
         }    
     } 
+    #Get counts/ compute common and non-common
     counts=table(root_tip_all)
-    con=names(which.max(counts))
+    com=names(which.max(counts))
     dis=names(which.min(counts))
     #0=concord 1=discord1 2=discord2 
-    m=data.frame(clade_name,P1=tre_trip$tip.label[1],P2=tre_trip$tip.label[2],P3=tre_trip$tip.label[3],brl1=brls_all1,brl2=brls_all2,trl=trl_all,brl_out=out_all,brl_int=internal_all,root_tip=root_tip_all,topo=ifelse(root_tip_all %in% con,"concord",ifelse(root_tip_all %in% dis,"discord1","discord2")),topo_con_sp=concord_all,good_trip=con==sp_out,tripl=tripl_all)
+    m=data.frame(clade_name,P1=tre_trip$tip.label[1],P2=tre_trip$tip.label[2],P3=tre_trip$tip.label[3],brl1=brls_all1,brl2=brls_all2,trl=trl_all,brl_out=out_all,brl_int=internal_all,root_tip=root_tip_all,topo=ifelse(root_tip_all %in% com,"concord",ifelse(root_tip_all %in% dis,"discord1","discord2")),topo_con_sp=concord_all,good_trip=com==sp_out,tripl=tripl_all)
     if(!any(table(m$root_tip)==0) & length(table(m$root_tip))==3)
     {
-        counts=table(m$root_tip)
-        com=names(which.max(counts))
-        congruent=sp_out==com
-        not_com=names(counts)[!names(counts) %in% com]
-        not_com_c=counts[!names(counts) %in% com]
-        m$common=ifelse(m$root_tip==com,"TRUE","FALSE")
+        #Common congruent with species tree 
+        congruent=com==sp_out
         m$proxy_t=(m$brl1+m$brl2)/m$trl
-        ccom=m[m$common==TRUE,"proxy_t"]
-        c1=m[m$root_tip==not_com[1],"proxy_t"]
-        c2=m[m$root_tip==not_com[2],"proxy_t"]
+        ccom=m[m$topo=="concord","proxy_t"]
+        c1=m[m$topo=="discord1","proxy_t"]
+        c2=m[m$topo=="discord2","proxy_t"]
+        not_com_count=table(m[m$topo!="concord","topo"])
         w_testc1=wilcox.test(ccom,c1)$p.value
         w_testc2=wilcox.test(ccom,c2)$p.value
         w_test=wilcox.test(c1,c2)$p.value
-        chi=chisq.test(not_com_c)$p.value
+        chi=chisq.test(not_com_count)$p.value
         v_out=c(clade_name,names(counts),counts,congruent,chi,mean(ccom),mean(c1),mean(c2),w_testc1,w_testc2,w_test)
         m$sig=chi<0.05 & w_test<0.05
+        m$d_smaller_concord=mean(ccom)>mean(c2) & w_testc2<0.05
         write.table(m,paste(c(taxa,"csv"),collapse="."),quote=F,row.names=F,col.names=F)
         return(as.vector(v_out))
     }
